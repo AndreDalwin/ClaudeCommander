@@ -1,175 +1,133 @@
-# Electron + TypeScript + React Best Practices
+# CLAUDE.md
 
-This document outlines best practices for file structure, security, and code modularity for Electron applications using TypeScript and React.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## File Structure
+## Project Overview
 
-### Scalable Project Structure
+Commander in Chief is an Electron-based GUI application that provides a React frontend for interacting with Claude Code CLI sessions. It manages Claude sessions, displays conversation history, and provides tool output visualization.
 
-```
-my-electron-app/
-├── assets/                  # Static assets (images, icons, etc.)
-├── build/                   # Build configuration files (Webpack, Electron Packager, etc.)
-├── node_modules/            # NPM dependencies
-├── public/                  # Public files (index.html, static resources)
-├── src/                     # Main source code (separated by process)
-│   ├── main/                # Main process (backend logic, Electron API calls)
-│   │   ├── app/             # Core application logic (app lifecycle, main window)
-│   │   ├── ipc/             # Inter-process communication (Main-Renderer)
-│   │   ├── windows/         # Window management (create different windows)
-│   │   └── utils/           # Utility functions for the main process
-│   ├── renderer/            # Renderer process (UI & front-end)
-│   │   ├── components/      # React components
-│   │   ├── pages/           # UI screens or page components
-│   │   ├── hooks/           # Custom hooks
-│   │   ├── services/        # API services or data-fetching logic
-│   │   ├── store/           # State management (Redux, etc.)
-│   │   └── styles/          # CSS/SASS/Styled Components
-│   ├── preload/             # Preload scripts for secure API exposure
-│   ├── shared/              # Shared code between main and renderer
-│   └── types/               # TypeScript types
-├── dist/                    # Distribution files after build
-├── scripts/                 # Build, test, deploy scripts
-├── tests/                   # Test files
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── README.md
-└── electron-builder.yml     # Electron build configuration
+## Development Commands
+
+```bash
+# Start development server
+npm start
+
+# Lint code
+npm run lint
+npm run lint:fix
+
+# Type checking
+npm run typecheck
+
+# Combined code quality check
+npm run check
+
+# Package the application
+npm run package
+
+# Build distributables
+npm run make
+
+# Publish application
+npm run publish
 ```
 
-### Feature-Based Organization
+## Architecture
 
-As the project grows, consider organizing by features:
+### Core Components
 
-```
-src/
-├── features/
-│   ├── feature1/
-│   │   ├── index.js         # Public API exports
-│   │   ├── components/      # Feature-specific components
-│   │   ├── hooks/           # Feature-specific hooks
-│   │   └── utils/           # Feature-specific utilities
-│   ├── feature2/
-│   └── ui/                  # Shared UI components
-├── main/                    # Main process code
-├── preload/                 # Preload scripts
-└── shared/                  # Shared utilities
-```
+- **Main Process** (`src/main/`): Electron backend that manages Claude CLI processes
+- **Renderer Process** (`src/renderer/`): React frontend for the UI
+- **Preload Script** (`src/main/preload.ts`): Secure bridge between main and renderer
+- **Shared Types** (`src/shared/types.ts`): TypeScript interfaces used across processes
 
-## Security Best Practices
+### Key Classes
 
-### Electron-Specific Security
+- `ClaudeManager` (`src/main/utils/claudeManager.ts`): Manages Claude CLI sessions and processes
+- `ClaudeSession`: Individual session wrapper around spawned Claude processes
+- `ClaudeStreamParser` (`src/main/utils/claudeStreamParser.ts`): Parses streaming JSON output from Claude CLI
+- `SessionStore` (`src/main/utils/sessionStore.ts`): Persistent session storage
+- `SessionDiscovery` (`src/main/utils/sessionDiscovery.ts`): Discovers existing Claude sessions in projects
 
-1. **Use Preload Scripts**
-   - Never expose Node.js functionality directly to renderer process
-   - Use contextBridge to securely expose APIs from main to renderer process
+### Session Management
 
-2. **Enable Context Isolation**
-   - In the BrowserWindow configuration:
-   ```javascript
-   webPreferences: {
-     contextIsolation: true,
-     nodeIntegration: false,
-     sandbox: true
-   }
-   ```
+The app operates by spawning Claude Code CLI processes with specific arguments:
+- New sessions: `claude -p "prompt" --model opus --output-format stream-json --verbose`
+- Continue sessions: `claude -c -p "prompt" --model opus --output-format stream-json --verbose`
+- Resume sessions: `claude --resume session-id -p "prompt" --model opus --output-format stream-json --verbose`
 
-3. **Proper IPC Communication**
-   - Use ipcRenderer and ipcMain for secure communication
-   - Validate all data passed between processes
+### Message Flow
 
-4. **Content Security Policy**
-   - Implement a strict Content Security Policy to prevent XSS attacks
-   - Avoid inline scripts and styles
+1. User input from React frontend → IPC → Main process
+2. Main process spawns Claude CLI with appropriate arguments
+3. Claude CLI stdout is parsed as streaming JSON
+4. Parsed messages are forwarded to renderer via IPC events
+5. React components update UI with new messages
 
-### React Security Considerations
+### IPC Communication
 
-1. **Input Sanitization**
-   - Use libraries like DOMPurify to sanitize user inputs
-   - Avoid using dangerouslySetInnerHTML unless absolutely necessary
+The main process exposes a `claudeAPI` interface to the renderer via `contextBridge`:
 
-2. **Authentication Best Practices**
-   - Store tokens in HttpOnly cookies, not localStorage
-   - Use HTTPS for all communications
-   - Consider implementing JWT, OAuth, or Auth0
+- `createSession()`: Start new Claude session
+- `continueSession()`: Continue existing session with new prompt
+- `getSessions()`: Get all active sessions
+- `getSessionMessages()`: Get message history for session
+- `onSessionMessage()`: Listen for real-time messages
+- `discoverProjects()`: Find existing Claude projects
+- `loadSessionHistory()`: Load session from Claude's history
 
-3. **Protect Against Common Attacks**
-   - XSS (Cross-Site Scripting): Sanitize all inputs
-   - CSRF (Cross-Site Request Forgery): Use anti-CSRF tokens
-   - SQL Injection: Use parameterized queries with ORMs
+## UI Components
 
-## Code Modularity
+### Tool Widgets (`src/renderer/components/tools/`)
 
-1. **Separation of Concerns**
-   - Split application functionality into independent modules
-   - Separate main and renderer process logic
+Specialized React components for visualizing Claude Code tool outputs:
+- `BashWidget`: Command execution results
+- `EditWidget`: File edit operations
+- `ReadFileWidget`: File contents display
+- `WriteWidget`: File write operations
+- `TodoWriteWidget`: Todo list management
+- `WebSearchWidget`: Web search results
 
-2. **Component Structure**
-   - Create small, reusable components
-   - Follow the single responsibility principle
-   - Use composition over inheritance
+### Session Views
 
-3. **State Management**
-   - Consider Redux, MobX, or React Context API for complex state
-   - Keep state management logic separate from UI components
+- `SessionView`: Main conversation interface
+- `SessionList`: List of active sessions
+- `SessionHistoryView`: Browse historical sessions
+- `ProjectsView`: Project discovery and selection
 
-4. **TypeScript Best Practices**
-   - Define clear interfaces for props and state
-   - Use proper typing for all variables and functions
-   - Create shared type definitions in the types/ directory
+## Path Configuration
 
-## Development Best Practices
+TypeScript path aliases are configured in `tsconfig.json`:
+- `@/*`: `src/*`
+- `@main/*`: `src/main/*` 
+- `@renderer/*`: `src/renderer/*`
+- `@shared/*`: `src/shared/*`
 
-1. **Absolute Imports**
-   - Configure absolute imports in tsconfig.json to avoid deep relative paths:
-   ```json
-   {
-     "compilerOptions": {
-       "baseUrl": ".",
-       "paths": {
-         "@/*": ["src/*"],
-         "@main/*": ["src/main/*"],
-         "@renderer/*": ["src/renderer/*"],
-         "@shared/*": ["src/shared/*"]
-       }
-     }
-   }
-   ```
+## Build System
 
-2. **Public API Pattern**
-   - Use index.ts files as "barrel files" to export a public API
-   - Hide implementation details inside directories
+- Uses Electron Forge with Webpack plugin
+- TailwindCSS v4 for styling with PostCSS
+- TypeScript with strict mode enabled
+- ESLint for code quality
 
-3. **File Naming Conventions**
-   - Use kebab-case for file and directory names (e.g., my-component.tsx)
-   - Improves compatibility across case-sensitive/insensitive file systems
+## Security
 
-4. **Code Quality Tools**
-   - ESLint for code quality
-   - Prettier for consistent formatting
-   - Jest and Testing Library for testing components
+Follows Electron security best practices:
+- Context isolation enabled
+- Node integration disabled in renderer
+- Preload script for secure IPC
+- Fuses configured for production security
 
-5. **Build and Packaging**
-   - Use Electron Builder or Electron Forge
-   - Implement code signing for production builds
-   - Set up proper auto-updates
+## Tool Output Parsing
 
-## Performance Considerations
+The app parses Claude Code's `--output-format stream-json` format, handling:
+- User messages
+- Assistant text responses (streamed)
+- Tool use requests
+- Tool results
+- Thinking content (streamed)
+- System messages
+- Usage statistics
+- Error messages
 
-1. **Lazy Loading**
-   - Use React's lazy loading for components not needed at startup
-   - Split your code into chunks with Webpack
-
-2. **Optimize Electron IPC**
-   - Batch IPC communications when possible
-   - Be mindful of IPC serialization costs for large data
-
-3. **Memory Management**
-   - Be aware of memory leaks in renderer processes
-   - Properly dispose event listeners and subscriptions
-
-4. **Startup Performance**
-   - Minimize main process initialization time
-   - Consider a loading window for better UX
-o
+Message types are defined in `src/shared/types.ts` as the `Message` interface.
