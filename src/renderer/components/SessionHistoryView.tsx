@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { Message } from '@shared/types';
 import { filterMessages } from '../utils/messageFiltering';
+import { ArrowLeft, MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 
 interface SessionHistoryViewProps {
   projectId: string;
@@ -225,38 +226,53 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
   };
 
   return (
-    <div className="w-full h-screen bg-dark-bg overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-5 px-10 py-5 bg-[#1a1a1a] border-b border-dark-border">
-        <button 
-          className="flex items-center gap-2 px-5 py-2.5 bg-dark-border border border-[#3e3e42] rounded-md text-text-primary text-sm transition-all duration-200 hover:bg-[#37373d] hover:-translate-x-0.5"
-          onClick={onBack}
-        >
-          ← Back
-        </button>
-        <div className="flex-1">
-          <h2 className="text-2xl font-semibold">Session History</h2>
-          {sessionName && <p className="text-sm text-text-secondary mt-1">{sessionName}</p>}
+      <div className="bg-[#1a1a1a]/95 backdrop-blur border-b border-[#2a2a2a] p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-6">
+            <button 
+              className="flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444]"
+              onClick={onBack}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Session History</h2>
+                {sessionName && <p className="text-gray-400">{sessionName}</p>}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-10">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-text-secondary">Loading session history...</div>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-red-500">Error: {error}</div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-text-secondary">No messages in this session</div>
-          </div>
-        ) : (
-          <MessageList messages={messages} />
-        )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto p-8">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-96">
+              <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />
+              <div className="text-gray-400">Loading session history...</div>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-96">
+              <AlertCircle className="w-8 h-8 text-red-400 mb-4" />
+              <div className="text-red-400">Error: {error}</div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-96">
+              <MessageSquare className="w-8 h-8 text-gray-500 mb-4" />
+              <div className="text-gray-400">No messages in this session</div>
+            </div>
+          ) : (
+            <MessageList messages={messages} />
+          )}
+        </div>
       </div>
     </div>
   );

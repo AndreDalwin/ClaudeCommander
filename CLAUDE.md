@@ -131,3 +131,52 @@ The app parses Claude Code's `--output-format stream-json` format, handling:
 - Error messages
 
 Message types are defined in `src/shared/types.ts` as the `Message` interface.
+
+## UI/UX Design System
+
+### Branding Guidelines
+
+**Brand Identity:**
+- **Name**: Commander in Chief
+- **Tagline**: Claude Code Session Management
+- **Logo**: Terminal icon in blue gradient container
+- **Personality**: Professional, modern, developer-focused
+
+**Color Palette:**
+- **Primary Brand**: `#0e639c` to `#1177bb` (blue gradient)
+- **Secondary**: Purple accents (`#8b5cf6`, `#a855f7`)
+- **Background**: Dark gradient (`#0a0a0a` → `#111111` → `#0f0f0f`)
+- **Surface**: `#1a1a1a` (cards/panels)
+- **Border**: `#2a2a2a` (default), `#3a3a3a` (hover)
+- **Text**: White primary, `#9ca3af` secondary, `#6b7280` muted
+- **Status Colors**:
+  - Success: `#10b981` (emerald)
+  - Error: `#ef4444` (red)  
+  - Warning: `#f59e0b` (amber)
+  - Info: `#3b82f6` (blue)
+
+**Typography:**
+- **Headers**: Bold, tracking-tight, white/gradient text
+- **Body**: Regular weight, good line-height, readable contrast
+- **Code**: Mono font families for technical content
+- **Hierarchy**: Clear size progression (text-3xl, text-2xl, text-xl, text-lg)
+
+**Visual Design Principles:**
+- **Depth**: Subtle shadows, layered surfaces, gradient backgrounds
+- **Rounded Corners**: `rounded-xl` (12px) for cards, `rounded-2xl` (16px) for prominent elements
+- **Spacing**: Generous padding/margins, consistent gap systems
+- **Icons**: Lucide React icons, 4px/5px/6px sizes, colored contextually
+- **Animations**: Smooth transitions (300ms), subtle hover effects (scale, translate)
+
+**Component Patterns:**
+- **Cards**: `bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 shadow-lg`
+- **Buttons Primary**: Gradient blue-to-purple, rounded-xl, with hover effects
+- **Buttons Secondary**: `bg-[#2a2a2a]` with border, hover state
+- **Form Inputs**: `bg-[#2a2a2a] border border-[#3a3a3a]` with focus states
+- **Status Indicators**: Icon + text combinations with semantic colors
+
+**Interaction Guidelines:**
+- **Hover States**: Subtle scale (1.02x), color shifts, border changes
+- **Focus States**: Blue ring, border color change
+- **Loading States**: Animated icons, skeleton states where appropriate
+- **Feedback**: Clear success/error messaging with appropriate colors/icons

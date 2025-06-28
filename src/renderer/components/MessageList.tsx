@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '@shared/types';
 import { ToolWidget } from './tools/ToolWidget';
+import { ChevronDown, User, Bot, Brain, CheckCircle, XCircle, Info, AlertTriangle, BarChart3, Zap } from 'lucide-react';
 
 interface MessageListProps {
   messages: Message[];
@@ -52,9 +53,12 @@ export function MessageList({ messages }: MessageListProps) {
       }
       
       return (
-        <div key={index} className="flex justify-end mb-4 animate-fade-in-up">
-          <div className="max-w-[80%] p-4 rounded-lg bg-brand-blue">
-            <div className="text-xs font-semibold mb-2 opacity-80">You</div>
+        <div key={index} className="flex justify-end mb-6 animate-fade-in-up">
+          <div className="max-w-[80%] p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg">
+            <div className="flex items-center gap-2 text-xs font-semibold mb-2 opacity-90">
+              <User className="w-3 h-3" />
+              You
+            </div>
             <div className="leading-relaxed whitespace-pre-wrap">{content}</div>
           </div>
         </div>
@@ -76,15 +80,16 @@ export function MessageList({ messages }: MessageListProps) {
       if (!textContent) return null;
       
       return (
-        <div key={index} className="flex justify-start mb-4 animate-fade-in-up">
-          <div className="max-w-[80%] p-4 rounded-lg bg-dark-surface">
-            <div className="text-xs font-semibold mb-2 opacity-80 flex items-center gap-2">
+        <div key={index} className="flex justify-start mb-6 animate-fade-in-up">
+          <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
+            <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
+              <Bot className="w-3 h-3 text-blue-400" />
               Claude
               {message.isStreaming && (
-                <span className="inline-block w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
+                <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
               )}
             </div>
-            <div className="leading-relaxed whitespace-pre-wrap">
+            <div className="leading-relaxed whitespace-pre-wrap text-white">
               {textContent}
             </div>
           </div>
@@ -109,30 +114,26 @@ export function MessageList({ messages }: MessageListProps) {
       const isExpanded = expandedThinking.has(index);
       
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className="p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
             <div 
-              className="flex items-center justify-between cursor-pointer"
+              className="flex items-center justify-between cursor-pointer hover:bg-[#2a2a2a] p-2 rounded-lg transition-colors"
               onClick={() => toggleThinking(index)}
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm text-text-muted">💭 Claude is thinking...</span>
+                <Brain className="w-4 h-4 text-purple-400" />
+                <span className="text-sm text-gray-300">Claude is thinking...</span>
                 {message.isStreaming && (
-                  <span className="inline-block w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
+                  <span className="inline-block w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
                 )}
               </div>
-              <svg 
-                className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown 
+                className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              />
             </div>
             {isExpanded && (
-              <div className="mt-3 pt-3 border-t border-dark-border">
-                <div className="text-sm text-text-secondary whitespace-pre-wrap">
+              <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+                <div className="text-sm text-gray-300 whitespace-pre-wrap bg-[#0f0f0f] p-3 rounded-lg font-mono">
                   {thinkingContent}
                 </div>
               </div>
@@ -162,12 +163,13 @@ export function MessageList({ messages }: MessageListProps) {
     // Handle result messages (execution summaries)
     if (message.type === 'result') {
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className="p-3 rounded-lg bg-green-900/20 border border-green-700/30">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-green-400">✅ Task Complete</span>
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 shadow-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-semibold text-emerald-400">Task Complete</span>
             </div>
-            <div className="text-sm text-text-secondary whitespace-pre-wrap">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap">
               {message.text || message.summary || 'Task completed successfully'}
             </div>
           </div>
@@ -180,14 +182,19 @@ export function MessageList({ messages }: MessageListProps) {
       const isError = message.is_error;
       
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className={`p-3 rounded-lg ${isError ? 'bg-red-900/20 border border-red-700/30' : 'bg-dark-surface border border-dark-border'}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-sm font-semibold ${isError ? 'text-red-400' : 'text-text-primary'}`}>
-                {isError ? '❌ Tool Error' : '🔧 Tool Result'}
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className={`p-4 rounded-2xl shadow-lg ${isError ? 'bg-red-500/10 border border-red-500/30' : 'bg-[#1a1a1a] border border-[#2a2a2a]'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              {isError ? (
+                <XCircle className="w-4 h-4 text-red-400" />
+              ) : (
+                <Zap className="w-4 h-4 text-blue-400" />
+              )}
+              <span className={`text-sm font-semibold ${isError ? 'text-red-400' : 'text-blue-400'}`}>
+                {isError ? 'Tool Error' : 'Tool Result'}
               </span>
             </div>
-            <div className="text-sm text-text-secondary whitespace-pre-wrap font-mono">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-[#0f0f0f] p-3 rounded-lg">
               {typeof message.output === 'string' ? message.output : JSON.stringify(message.output, null, 2)}
             </div>
           </div>
@@ -201,14 +208,29 @@ export function MessageList({ messages }: MessageListProps) {
       const isInit = message.subtype === 'init';
       
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className={`p-3 rounded-lg ${isReminder ? 'bg-yellow-900/20 border border-yellow-700/30' : isInit ? 'bg-blue-900/20 border border-blue-700/30' : 'bg-gray-900/20 border border-gray-700/30'}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold">
-                {isReminder ? '⚠️ System Reminder' : isInit ? '🚀 Session Started' : 'ℹ️ System Message'}
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className={`p-4 rounded-2xl shadow-lg ${
+            isReminder ? 'bg-yellow-500/10 border border-yellow-500/30' : 
+            isInit ? 'bg-blue-500/10 border border-blue-500/30' : 
+            'bg-gray-500/10 border border-gray-500/30'
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              {isReminder ? (
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              ) : isInit ? (
+                <Zap className="w-4 h-4 text-blue-400" />
+              ) : (
+                <Info className="w-4 h-4 text-gray-400" />
+              )}
+              <span className={`text-sm font-semibold ${
+                isReminder ? 'text-yellow-400' : 
+                isInit ? 'text-blue-400' : 
+                'text-gray-400'
+              }`}>
+                {isReminder ? 'System Reminder' : isInit ? 'Session Started' : 'System Message'}
               </span>
             </div>
-            <div className="text-sm text-text-secondary whitespace-pre-wrap">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap">
               {message.system}
             </div>
           </div>
@@ -219,14 +241,15 @@ export function MessageList({ messages }: MessageListProps) {
     // Handle usage messages
     if (message.type === 'usage' && message.usage) {
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
-            <div className="text-xs text-text-muted">
-              📊 Token Usage: 
-              {message.usage.input_tokens && ` Input: ${message.usage.input_tokens}`}
-              {message.usage.output_tokens && ` | Output: ${message.usage.output_tokens}`}
-              {message.usage.cache_read_input_tokens && ` | Cache Read: ${message.usage.cache_read_input_tokens}`}
-              {message.usage.cache_creation_input_tokens && ` | Cache Creation: ${message.usage.cache_creation_input_tokens}`}
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className="p-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <BarChart3 className="w-3 h-3" />
+              <span>Token Usage:</span>
+              {message.usage.input_tokens && <span className="text-blue-400">Input: {message.usage.input_tokens}</span>}
+              {message.usage.output_tokens && <span className="text-purple-400">Output: {message.usage.output_tokens}</span>}
+              {message.usage.cache_read_input_tokens && <span className="text-green-400">Cache Read: {message.usage.cache_read_input_tokens}</span>}
+              {message.usage.cache_creation_input_tokens && <span className="text-yellow-400">Cache Creation: {message.usage.cache_creation_input_tokens}</span>}
             </div>
           </div>
         </div>
@@ -236,10 +259,13 @@ export function MessageList({ messages }: MessageListProps) {
     // Handle errors
     if (message.type === 'error') {
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
-          <div className="p-4 rounded-lg bg-red-900/20 border border-red-700/30">
-            <div className="font-semibold mb-2 text-red-400">❌ Error</div>
-            <div className="text-sm whitespace-pre-wrap">{message.error}</div>
+        <div key={index} className="mb-6 animate-fade-in-up">
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg">
+            <div className="flex items-center gap-2 font-semibold mb-2 text-red-400">
+              <XCircle className="w-4 h-4" />
+              Error
+            </div>
+            <div className="text-sm whitespace-pre-wrap text-gray-300 bg-[#0f0f0f] p-3 rounded-lg font-mono">{message.error}</div>
           </div>
         </div>
       );
@@ -247,17 +273,20 @@ export function MessageList({ messages }: MessageListProps) {
 
     // Handle raw/unknown messages
     return (
-      <div key={index} className="mb-4 animate-fade-in-up">
-        <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
-          <div className="text-xs text-text-muted mb-1">Raw Message ({message.type})</div>
-          <pre className="text-xs font-mono overflow-x-auto">{JSON.stringify(message, null, 2)}</pre>
+      <div key={index} className="mb-6 animate-fade-in-up">
+        <div className="p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
+          <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
+            <Info className="w-3 h-3" />
+            Raw Message ({message.type})
+          </div>
+          <pre className="text-xs font-mono overflow-x-auto text-gray-300 bg-[#0f0f0f] p-3 rounded-lg">{JSON.stringify(message, null, 2)}</pre>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col py-5 px-6">
+    <div className="flex flex-col py-6 px-6 space-y-2">
       {filteredMessages.map((message, index) => renderMessage(message, index))}
       <div ref={messagesEndRef} />
     </div>
