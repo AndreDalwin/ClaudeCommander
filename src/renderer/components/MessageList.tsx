@@ -1,19 +1,100 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '@shared/types';
+import { 
+  StrReplaceEditorWidget, 
+  ReadFileWidget, 
+  BashWidget, 
+  WebSearchWidget, 
+  ListFilesWidget, 
+  GenericToolWidget 
+} from './tools';
 
 interface MessageListProps {
   messages: Message[];
 }
 
+// Tool name mapping for widgets
+const EDITOR_TOOLS = ['str_replace_editor', 'str_replace_based_edit_tool', 'str_replace'];
+const FILE_TOOLS = ['read_file', 'view_file'];
+
 export function MessageList({ messages }: MessageListProps) {
+  const [expandedThinking, setExpandedThinking] = useState<Set<number>>(new Set());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const accumulatedTexts = useRef<Map<number, string>>(new Map());
+  const accumulatedThinkings = useRef<Map<number, string>>(new Map());
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Filter out caveat messages
+  const filteredMessages = messages.filter(msg => {
+    if (msg.type === 'system' && msg.system?.includes('Conversation-specific instructions')) {
+      return false;
+    }
+    return true;
+  });
+
+  const toggleThinking = (index: number) => {
+    const newExpanded = new Set(expandedThinking);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedThinking(newExpanded);
+  };
+
+  const renderToolWidget = (message: Message, result?: Message) => {
+    const toolName = message.name || '';
+    const input = message.input || {};
+
+    // Special handling for editor tools
+    if (EDITOR_TOOLS.includes(toolName)) {
+      return (
+        <StrReplaceEditorWidget 
+          input={input} 
+          result={result?.output}
+        />
+      );
+    }
+
+    // File reading tools
+    if (FILE_TOOLS.includes(toolName)) {
+      return (
+        <ReadFileWidget 
+          input={input} 
+          result={result?.output}
+        />
+      );
+    }
+
+    // Other specific tools
+    switch (toolName) {
+      case 'bash':
+      case 'run_command':
+        return <BashWidget input={input} result={result?.output} />;
+      
+      case 'web_search':
+        return <WebSearchWidget input={input} result={result?.output} />;
+      
+      case 'list_files':
+      case 'ls':
+        return <ListFilesWidget input={input} result={result?.output} />;
+      
+      default:
+        return <GenericToolWidget name={toolName} input={input} result={result?.output} />;
+    }
+  };
+
   const renderMessage = (message: Message, index: number) => {
+    // Handle user messages
     if (message.type === 'user') {
-      // Extract text content from user message
       let content = '';
       if (typeof message.message?.content === 'string') {
         content = message.message.content;
       } else if (Array.isArray(message.message?.content)) {
-        // Handle array of content objects
         content = message.message.content
           .map((item: any) => {
             if (typeof item === 'string') return item;
@@ -24,77 +105,182 @@ export function MessageList({ messages }: MessageListProps) {
       }
       
       return (
-        <div key={index} className="p-4 rounded-lg bg-brand-blue ml-12 my-4">
-          <div className="text-xs font-semibold mb-2 opacity-80">You</div>
-          <div className="leading-relaxed whitespace-pre-wrap">{content}</div>
+        <div key={index} className="flex justify-end mb-4 animate-fade-in-up">
+          <div className="max-w-[80%] p-4 rounded-lg bg-brand-blue">
+            <div className="text-xs font-semibold mb-2 opacity-80">You</div>
+            <div className="leading-relaxed whitespace-pre-wrap">{content}</div>
+          </div>
         </div>
       );
     }
 
-    // Handle different message types from Claude
-    switch (message.type) {
-      case 'text':
-        const textContent = typeof message.text === 'string' 
-          ? message.text 
-          : typeof message.text === 'object' && message.text !== null
-            ? (message.text as any).text || JSON.stringify(message.text)
-            : String(message.text || '');
-            
-        return (
-          <div key={index} className="p-4 rounded-lg bg-dark-border mr-12 my-4">
-            <div className="text-xs font-semibold mb-2 opacity-80">Claude</div>
+    // Handle assistant text messages
+    if (message.type === 'text') {
+      // Update accumulated text for streaming
+      if (message.isStreaming && message.text) {
+        const currentAccumulated = accumulatedTexts.current.get(index) || '';
+        accumulatedTexts.current.set(index, currentAccumulated + message.text);
+      }
+
+      const textContent = message.accumulatedText || 
+                         accumulatedTexts.current.get(index) || 
+                         message.text || '';
+      
+      if (!textContent) return null;
+      
+      return (
+        <div key={index} className="flex justify-start mb-4 animate-fade-in-up">
+          <div className="max-w-[80%] p-4 rounded-lg bg-dark-surface">
+            <div className="text-xs font-semibold mb-2 opacity-80 flex items-center gap-2">
+              Claude
+              {message.isStreaming && (
+                <span className="inline-block w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
+              )}
+            </div>
             <div className="leading-relaxed whitespace-pre-wrap">
               {textContent}
             </div>
           </div>
-        );
-
-      case 'tool_use':
-        return (
-          <div key={index} className="p-4 rounded-lg bg-[#3c3c3c] border-l-[3px] border-[#f48771] my-4">
-            <div className="font-semibold mb-2">
-              🔧 {message.name}
-            </div>
-            <pre className="text-xs font-mono overflow-x-auto">
-              {JSON.stringify(message.input, null, 2)}
-            </pre>
-          </div>
-        );
-
-      case 'tool_result':
-        return (
-          <div key={index} className="p-4 rounded-lg bg-[#3c3c3c] border-l-[3px] border-[#89d185] my-4">
-            <div className="font-semibold mb-2">
-              ✓ Tool Result
-            </div>
-            <pre className="text-xs font-mono overflow-x-auto">
-              {typeof message.output === 'string' 
-                ? message.output 
-                : JSON.stringify(message.output, null, 2)}
-            </pre>
-          </div>
-        );
-
-      case 'error':
-        return (
-          <div key={index} className="p-4 rounded-lg bg-[#5a1d1d] border-l-[3px] border-[#f14c4c] my-4">
-            <div className="font-semibold mb-2">Error</div>
-            <div className="whitespace-pre-wrap">{message.error}</div>
-          </div>
-        );
-
-      default:
-        return (
-          <div key={index} className="p-4 rounded-lg bg-dark-surface my-4">
-            <pre className="text-xs font-mono overflow-x-auto">{JSON.stringify(message, null, 2)}</pre>
-          </div>
-        );
+        </div>
+      );
     }
+
+    // Handle thinking messages
+    if (message.type === 'thinking') {
+      // Update accumulated thinking for streaming
+      if (message.isStreaming && message.thinking) {
+        const currentAccumulated = accumulatedThinkings.current.get(index) || '';
+        accumulatedThinkings.current.set(index, currentAccumulated + message.thinking);
+      }
+
+      const thinkingContent = message.accumulatedThinking || 
+                             accumulatedThinkings.current.get(index) || 
+                             message.thinking || '';
+      
+      if (!thinkingContent) return null;
+      
+      const isExpanded = expandedThinking.has(index);
+      
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => toggleThinking(index)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-muted">💭 Claude is thinking...</span>
+                {message.isStreaming && (
+                  <span className="inline-block w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
+                )}
+              </div>
+              <svg 
+                className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            {isExpanded && (
+              <div className="mt-3 pt-3 border-t border-dark-border">
+                <div className="text-sm text-text-secondary whitespace-pre-wrap">
+                  {thinkingContent}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle tool use messages
+    if (message.type === 'tool_use') {
+      // Find corresponding tool result
+      const resultIndex = filteredMessages.findIndex((msg, i) => 
+        i > index && 
+        msg.type === 'tool_result' && 
+        msg.tool_use_id_result === message.tool_use_id
+      );
+      const result = resultIndex !== -1 ? filteredMessages[resultIndex] : undefined;
+
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          {renderToolWidget(message, result)}
+        </div>
+      );
+    }
+
+    // Skip tool_result messages as they're handled with tool_use
+    if (message.type === 'tool_result') {
+      return null;
+    }
+
+    // Handle system messages
+    if (message.type === 'system') {
+      const isReminder = message.reminder || message.system?.includes('reminder');
+      
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className={`p-3 rounded-lg ${isReminder ? 'bg-yellow-900/20 border border-yellow-700/30' : 'bg-blue-900/20 border border-blue-700/30'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold">
+                {isReminder ? '⚠️ System Reminder' : 'ℹ️ System Message'}
+              </span>
+            </div>
+            <div className="text-sm text-text-secondary whitespace-pre-wrap">
+              {message.system}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle usage messages
+    if (message.type === 'usage' && message.usage) {
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
+            <div className="text-xs text-text-muted">
+              📊 Token Usage: 
+              {message.usage.input_tokens && ` Input: ${message.usage.input_tokens}`}
+              {message.usage.output_tokens && ` | Output: ${message.usage.output_tokens}`}
+              {message.usage.cache_read_input_tokens && ` | Cache Read: ${message.usage.cache_read_input_tokens}`}
+              {message.usage.cache_creation_input_tokens && ` | Cache Creation: ${message.usage.cache_creation_input_tokens}`}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle errors
+    if (message.type === 'error') {
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className="p-4 rounded-lg bg-red-900/20 border border-red-700/30">
+            <div className="font-semibold mb-2 text-red-400">❌ Error</div>
+            <div className="text-sm whitespace-pre-wrap">{message.error}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle raw/unknown messages
+    return (
+      <div key={index} className="mb-4 animate-fade-in-up">
+        <div className="p-3 rounded-lg bg-dark-surface border border-dark-border">
+          <div className="text-xs text-text-muted mb-1">Raw Message ({message.type})</div>
+          <pre className="text-xs font-mono overflow-x-auto">{JSON.stringify(message, null, 2)}</pre>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col py-5">
-      {messages.map((message, index) => renderMessage(message, index))}
+    <div className="flex flex-col py-5 px-6">
+      {filteredMessages.map((message, index) => renderMessage(message, index))}
+      <div ref={messagesEndRef} />
     </div>
   );
 }

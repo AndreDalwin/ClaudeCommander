@@ -43,7 +43,8 @@ export function SessionView({ sessionId, onRefreshSessions }: SessionViewProps) 
 
   const subscribeToMessages = () => {
     console.log('Subscribing to messages for session:', sessionId);
-    let currentAssistantId: string | null = null;
+    let currentTextMessageIndex: number | null = null;
+    let currentThinkingMessageIndex: number | null = null;
     
     return window.claudeAPI.onSessionMessage(sessionId, (message) => {
       console.log('Received message:', message);
@@ -53,43 +54,84 @@ export function SessionView({ sessionId, onRefreshSessions }: SessionViewProps) 
           // Add user message
           setMessages(prev => [...prev, message]);
           setIsLoading(true);
+          currentTextMessageIndex = null;
+          currentThinkingMessageIndex = null;
           break;
           
         case 'text':
           // Handle streaming text with accumulation
-          if (message.accumulatedText) {
-            setMessages(prev => {
-              const lastMessage = prev[prev.length - 1];
-              
-              // If last message is assistant text, update it
-              if (lastMessage && lastMessage.type === 'text' && !lastMessage.message) {
-                return [
-                  ...prev.slice(0, -1),
-                  {
-                    ...lastMessage,
-                    text: message.accumulatedText,
-                    timestamp: message.timestamp
-                  }
-                ];
-              } else {
-                // Create new assistant message
-                if (!currentAssistantId) {
-                  currentAssistantId = `${Date.now()}-assistant`;
-                }
-                return [...prev, {
-                  type: 'text',
-                  text: message.accumulatedText,
-                  timestamp: message.timestamp
-                }];
-              }
-            });
-          }
+          setMessages(prev => {
+            const newMessages = [...prev];
+            
+            // Check if we're continuing a stream or starting a new one
+            if (currentTextMessageIndex !== null && 
+                currentTextMessageIndex < newMessages.length && 
+                newMessages[currentTextMessageIndex].type === 'text' &&
+                newMessages[currentTextMessageIndex].isStreaming) {
+              // Update existing streaming message
+              const existingMessage = newMessages[currentTextMessageIndex];
+              newMessages[currentTextMessageIndex] = {
+                ...existingMessage,
+                accumulatedText: (existingMessage.accumulatedText || '') + (message.text || ''),
+                timestamp: message.timestamp,
+                isStreaming: message.isStreaming !== false
+              };
+            } else {
+              // Start new text message
+              currentTextMessageIndex = newMessages.length;
+              newMessages.push({
+                ...message,
+                accumulatedText: message.text || '',
+                isStreaming: message.isStreaming !== false
+              });
+            }
+            
+            return newMessages;
+          });
+          break;
+          
+        case 'thinking':
+          // Handle streaming thinking with accumulation
+          setMessages(prev => {
+            const newMessages = [...prev];
+            
+            // Check if we're continuing a stream or starting a new one
+            if (currentThinkingMessageIndex !== null && 
+                currentThinkingMessageIndex < newMessages.length && 
+                newMessages[currentThinkingMessageIndex].type === 'thinking' &&
+                newMessages[currentThinkingMessageIndex].isStreaming) {
+              // Update existing streaming message
+              const existingMessage = newMessages[currentThinkingMessageIndex];
+              newMessages[currentThinkingMessageIndex] = {
+                ...existingMessage,
+                accumulatedThinking: (existingMessage.accumulatedThinking || '') + (message.thinking || ''),
+                timestamp: message.timestamp,
+                isStreaming: message.isStreaming !== false
+              };
+            } else {
+              // Start new thinking message
+              currentThinkingMessageIndex = newMessages.length;
+              newMessages.push({
+                ...message,
+                accumulatedThinking: message.thinking || '',
+                isStreaming: message.isStreaming !== false
+              });
+            }
+            
+            return newMessages;
+          });
           break;
           
         case 'tool_use':
         case 'tool_result':
-          // Reset assistant ID for new messages
-          currentAssistantId = null;
+        case 'system':
+        case 'usage':
+        case 'error':
+          // Reset streaming indices for new messages
+          if (message.type === 'tool_use' || message.type === 'system') {
+            currentTextMessageIndex = null;
+            currentThinkingMessageIndex = null;
+          }
           setMessages(prev => [...prev, message]);
           break;
           

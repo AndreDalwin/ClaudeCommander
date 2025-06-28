@@ -8,12 +8,12 @@ export interface ClaudeSession {
 }
 
 export interface Message {
-  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'error' | 'raw';
+  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw';
   timestamp: string;
   // User message
   message?: {
     role: 'user' | 'assistant';
-    content: string;
+    content: string | Array<{type: string; text?: string; [key: string]: any}>;
   };
   // Text message from Claude
   text?: string;
@@ -21,10 +21,27 @@ export interface Message {
   // Tool use message
   name?: string;
   input?: any;
+  tool_use_id?: string;
   // Tool result
   output?: any;
+  tool_use_id_result?: string;
+  // Thinking message
+  thinking?: string;
+  accumulatedThinking?: string; // For streaming thinking
+  // System message
+  system?: string;
+  reminder?: boolean;
+  // Usage info
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+  };
   // Error
   error?: string;
+  // Streaming indicator
+  isStreaming?: boolean;
 }
 
 export interface SessionData {

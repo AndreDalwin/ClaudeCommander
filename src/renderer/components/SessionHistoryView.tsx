@@ -46,6 +46,7 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
                 convertedMessages.push({
                   type: 'text',
                   text: content.text,
+                  accumulatedText: content.text,
                   timestamp: entry.timestamp || new Date().toISOString()
                 });
               } else if (content.type === 'tool_use') {
@@ -53,6 +54,7 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
                   type: 'tool_use',
                   name: content.name,
                   input: content.input,
+                  tool_use_id: content.id,
                   timestamp: entry.timestamp || new Date().toISOString()
                 });
               }
@@ -64,6 +66,16 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           convertedMessages.push({
             type: 'text',
             text: entry.text,
+            accumulatedText: entry.text,
+            timestamp: entry.timestamp || new Date().toISOString()
+          });
+        }
+        // Handle thinking messages
+        else if (entry.type === 'thinking' && entry.thinking) {
+          convertedMessages.push({
+            type: 'thinking',
+            thinking: entry.thinking,
+            accumulatedThinking: entry.thinking,
             timestamp: entry.timestamp || new Date().toISOString()
           });
         }
@@ -73,6 +85,7 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             type: 'tool_use',
             name: entry.name,
             input: entry.input,
+            tool_use_id: entry.id || entry.tool_use_id,
             timestamp: entry.timestamp || new Date().toISOString()
           });
         }
@@ -81,6 +94,24 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           convertedMessages.push({
             type: 'tool_result',
             output: entry.output,
+            tool_use_id_result: entry.tool_use_id || entry.id,
+            timestamp: entry.timestamp || new Date().toISOString()
+          });
+        }
+        // Handle system messages
+        else if (entry.type === 'system' && entry.system) {
+          convertedMessages.push({
+            type: 'system',
+            system: entry.system,
+            reminder: entry.reminder || false,
+            timestamp: entry.timestamp || new Date().toISOString()
+          });
+        }
+        // Handle usage messages
+        else if (entry.type === 'usage' && entry.usage) {
+          convertedMessages.push({
+            type: 'usage',
+            usage: entry.usage,
             timestamp: entry.timestamp || new Date().toISOString()
           });
         }
@@ -92,7 +123,15 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
                           'Unknown error';
           convertedMessages.push({
             type: 'error',
-            error: errorText,
+            error: typeof errorText === 'string' ? errorText : JSON.stringify(errorText),
+            timestamp: entry.timestamp || new Date().toISOString()
+          });
+        }
+        // Handle raw messages for anything else
+        else if (entry.type && !['user', 'assistant'].includes(entry.type)) {
+          convertedMessages.push({
+            type: 'raw',
+            ...entry,
             timestamp: entry.timestamp || new Date().toISOString()
           });
         }
