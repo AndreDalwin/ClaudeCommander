@@ -19,7 +19,7 @@ export const rules: Required<ModuleOptions>['rules'] = [
     },
   },
   {
-    test: /\.tsx?$/,
+    test: /\.(ts|tsx)$/,
     exclude: /(node_modules|\.webpack)/,
     use: {
       loader: 'ts-loader',
