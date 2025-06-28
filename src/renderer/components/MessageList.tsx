@@ -1,21 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '@shared/types';
-import { 
-  StrReplaceEditorWidget, 
-  ReadFileWidget, 
-  BashWidget, 
-  WebSearchWidget, 
-  ListFilesWidget, 
-  GenericToolWidget 
-} from './tools';
+import { ToolWidget } from './tools/ToolWidget';
 
 interface MessageListProps {
   messages: Message[];
 }
 
-// Tool name mapping for widgets
-const EDITOR_TOOLS = ['str_replace_editor', 'str_replace_based_edit_tool', 'str_replace'];
-const FILE_TOOLS = ['read_file', 'view_file'];
 
 export function MessageList({ messages }: MessageListProps) {
   const [expandedThinking, setExpandedThinking] = useState<Set<number>>(new Set());
@@ -47,45 +37,7 @@ export function MessageList({ messages }: MessageListProps) {
   };
 
   const renderToolWidget = (message: Message, result?: Message) => {
-    const toolName = message.name || '';
-    const input = message.input || {};
-
-    // Special handling for editor tools
-    if (EDITOR_TOOLS.includes(toolName)) {
-      return (
-        <StrReplaceEditorWidget 
-          input={input} 
-          result={result?.output}
-        />
-      );
-    }
-
-    // File reading tools
-    if (FILE_TOOLS.includes(toolName)) {
-      return (
-        <ReadFileWidget 
-          input={input} 
-          result={result?.output}
-        />
-      );
-    }
-
-    // Other specific tools
-    switch (toolName) {
-      case 'bash':
-      case 'run_command':
-        return <BashWidget input={input} result={result?.output} />;
-      
-      case 'web_search':
-        return <WebSearchWidget input={input} result={result?.output} />;
-      
-      case 'list_files':
-      case 'ls':
-        return <ListFilesWidget input={input} result={result?.output} />;
-      
-      default:
-        return <GenericToolWidget name={toolName} input={input} result={result?.output} />;
-    }
+    return <ToolWidget message={message} result={result} />;
   };
 
   const renderMessage = (message: Message, index: number) => {
