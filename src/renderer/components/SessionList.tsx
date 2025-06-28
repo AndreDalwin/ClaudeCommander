@@ -9,19 +9,23 @@ interface SessionListProps {
 
 export function SessionList({ sessions, activeSessionId, onSelectSession }: SessionListProps) {
   return (
-    <div className="session-list">
+    <div className="flex-1 overflow-y-auto p-2.5">
       {sessions.map((session) => (
         <div
           key={session.id}
-          className={`session-item ${session.id === activeSessionId ? 'active' : ''}`}
+          className={`p-3 mb-2 bg-dark-border rounded cursor-pointer transition-all duration-200 ${
+            session.id === activeSessionId 
+              ? 'bg-[#37373d] border-l-[3px] border-brand-blue' 
+              : 'hover:bg-[#37373d]'
+          }`}
           onClick={() => onSelectSession(session.id)}
         >
-          <div className="session-name">{session.name}</div>
-          <div className="session-meta">
-            <span className="session-path">{session.projectPath.split('/').pop()}</span>
-            {session.isActive && <span className="session-status">Active</span>}
+          <div className="font-medium mb-1">{session.name}</div>
+          <div className="text-xs text-text-secondary mb-1">
+            <span>{session.projectPath.split('/').pop()}</span>
+            {session.isActive && <span className="bg-[#16825d] text-white px-1.5 py-0.5 rounded text-[10px] ml-2">Active</span>}
           </div>
-          <div className="session-info">
+          <div className="text-[11px] text-text-muted">
             {session.messageCount} messages
           </div>
         </div>

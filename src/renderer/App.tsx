@@ -146,37 +146,45 @@ function App() {
             onRefreshSessions={loadSessions}
           />
         ) : (
-          <div className="empty-state">
-            <h2>No session selected</h2>
-            <button onClick={() => setCurrentView('home')}>Back to Home</button>
+          <div className="flex-1 flex flex-col items-center justify-center text-text-muted">
+            <h2 className="text-2xl font-normal mb-4">No session selected</h2>
+            <button 
+              className="px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light"
+              onClick={() => setCurrentView('home')}
+            >
+              Back to Home
+            </button>
           </div>
         );
       
       case 'active-sessions':
         return (
-          <div className="active-sessions-view">
-            <div className="view-header">
-              <button className="back-btn" onClick={() => setCurrentView('home')}>
+          <div className="w-full h-screen bg-dark-bg overflow-y-auto">
+            <div className="flex items-center gap-5 px-10 py-5 bg-[#1a1a1a] border-b border-dark-border">
+              <button 
+                className="flex items-center gap-2 px-5 py-2.5 bg-dark-border border border-[#3e3e42] rounded-md text-text-primary text-sm transition-all duration-200 hover:bg-[#37373d] hover:-translate-x-0.5"
+                onClick={() => setCurrentView('home')}
+              >
                 ← Back
               </button>
-              <h2>Active Sessions</h2>
+              <h2 className="text-3xl font-semibold flex-1">Active Sessions</h2>
             </div>
-            <div className="sessions-list">
+            <div className="p-5 lg:p-10">
               {sessions.filter(s => s.isActive).map(session => (
                 <div 
                   key={session.id}
-                  className="session-item"
+                  className="bg-dark-surface border border-dark-border rounded-lg p-5 mb-4 cursor-pointer transition-all duration-200 hover:bg-dark-hover hover:border-[#3e3e42] hover:translate-x-1"
                   onClick={() => {
                     setActiveSessionId(session.id);
                     setCurrentView('session');
                   }}
                 >
-                  <div className="session-name">{session.name}</div>
-                  <div className="session-path">{session.projectPath}</div>
+                  <div className="text-lg font-semibold text-text-primary mb-2">{session.name}</div>
+                  <div className="text-sm text-text-muted">{session.projectPath}</div>
                 </div>
               ))}
               {sessions.filter(s => s.isActive).length === 0 && (
-                <div className="empty-state">No active sessions</div>
+                <div className="text-center py-16 text-text-muted">No active sessions</div>
               )}
             </div>
           </div>
@@ -188,39 +196,39 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="flex h-screen bg-dark-bg text-text-primary custom-scrollbar">
       {currentView === 'session' ? (
         <>
-          <aside className="sidebar compact">
-            <div className="sidebar-header">
+          <aside className="w-52 bg-dark-hover border-r border-[#3e3e42] flex flex-col">
+            <div className="p-5 border-b border-[#3e3e42]">
               <button 
-                className="home-btn"
+                className="w-full py-2.5 px-4 bg-dark-border border border-[#3e3e42] rounded text-text-primary text-sm transition-all duration-300 hover:bg-[#37373d] hover:border-brand-blue"
                 onClick={() => setCurrentView('home')}
                 title="Back to Home"
               >
                 ← Home
               </button>
             </div>
-            <div className="session-info-sidebar">
+            <div className="p-5">
               {sessions.find(s => s.id === activeSessionId) && (
                 <>
-                  <h3>Current Session</h3>
-                  <div className="session-name">
+                  <h3 className="mb-4 text-sm text-text-secondary uppercase tracking-wider">Current Session</h3>
+                  <div className="text-base font-medium mb-2">
                     {sessions.find(s => s.id === activeSessionId)?.name}
                   </div>
-                  <div className="session-path">
+                  <div className="text-xs text-text-muted break-all">
                     {sessions.find(s => s.id === activeSessionId)?.projectPath}
                   </div>
                 </>
               )}
             </div>
           </aside>
-          <main className="main-content expanded">
+          <main className="flex-1">
             {renderContent()}
           </main>
         </>
       ) : (
-        <main className="main-content full">
+        <main className="w-full">
           {renderContent()}
         </main>
       )}

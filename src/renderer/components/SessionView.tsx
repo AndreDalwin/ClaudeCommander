@@ -144,13 +144,13 @@ export function SessionView({ sessionId, onRefreshSessions }: SessionViewProps) 
   };
 
   return (
-    <div className="session-view">
-      <div className="session-header">
-        <h2>{sessionInfo?.name || 'Loading...'}</h2>
-        <span className="session-path">{sessionInfo?.projectPath}</span>
+    <div className="h-full flex flex-col">
+      <div className="px-5 py-5 border-b border-[#3e3e42]">
+        <h2 className="text-lg font-medium mb-1">{sessionInfo?.name || 'Loading...'}</h2>
+        <span className="text-sm text-text-muted">{sessionInfo?.projectPath}</span>
       </div>
 
-      <div className="messages-container">
+      <div className="flex-1 overflow-y-auto px-5">
         <MessageList messages={messages} />
         <div ref={messagesEndRef} />
       </div>

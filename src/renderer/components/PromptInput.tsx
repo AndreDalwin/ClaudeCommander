@@ -27,10 +27,10 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
   };
 
   return (
-    <form className="prompt-input-form" onSubmit={handleSubmit}>
-      <div className="prompt-input-container">
+    <form className="border-t border-[#3e3e42] p-5" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-2.5">
         <textarea
-          className="prompt-input"
+          className="w-full p-3 bg-[#3c3c3c] border border-[#464647] text-text-primary rounded-md resize-vertical focus:outline-none focus:border-brand-blue disabled:opacity-60"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -38,12 +38,12 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
           disabled={isLoading || disabled}
           rows={3}
         />
-        <div className="prompt-controls">
+        <div className="flex gap-2.5 justify-end">
           <select 
             value={model} 
             onChange={(e) => setModel(e.target.value)}
             disabled={isLoading || disabled}
-            className="model-select"
+            className="px-3 py-2 bg-[#3c3c3c] border border-[#464647] text-text-primary rounded-md cursor-pointer focus:outline-none focus:border-brand-blue disabled:opacity-60"
           >
             <option value="opus">Opus</option>
             <option value="sonnet">Sonnet</option>
@@ -53,7 +53,7 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
             <button 
               type="button" 
               onClick={onCancel}
-              className="cancel-btn"
+              className="px-4 py-2 bg-[#f14c4c] text-white rounded-md hover:bg-[#cd3636]"
             >
               Cancel
             </button>
@@ -61,7 +61,7 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
             <button 
               type="submit" 
               disabled={!prompt.trim() || disabled}
-              className="submit-btn"
+              className="px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Send
             </button>
