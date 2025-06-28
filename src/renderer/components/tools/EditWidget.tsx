@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Message } from '@shared/types';
 
-interface BashWidgetProps {
+interface EditWidgetProps {
   tool: Message;
   result?: Message;
 }
 
-export function BashWidget({ tool, result }: BashWidgetProps) {
+export function EditWidget({ tool, result }: EditWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const filePath = tool.input?.file_path || 'Unknown file';
+  const fileName = filePath.split('/').pop() || filePath;
   const isSuccess = !result?.error;
   
   return (
@@ -18,14 +20,14 @@ export function BashWidget({ tool, result }: BashWidgetProps) {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <div className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </div>
           <div>
-            <div className="font-medium text-text-primary">Bash Command</div>
-            <div className="text-sm text-text-secondary font-mono">{tool.input?.command || 'Unknown command'}</div>
+            <div className="font-medium text-text-primary">Edit File</div>
+            <div className="text-sm text-text-secondary">{fileName}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -34,7 +36,7 @@ export function BashWidget({ tool, result }: BashWidgetProps) {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Complete
+              Applied
             </div>
           ) : (
             <div className="flex items-center gap-1 text-red-400 text-sm">
@@ -52,26 +54,36 @@ export function BashWidget({ tool, result }: BashWidgetProps) {
 
       {/* Content */}
       {isExpanded && (
-        <div className="p-4 space-y-3">
-          <div className="bg-dark-bg rounded-lg p-3 border border-dark-border">
-            <div className="text-xs text-text-muted mb-2">Command:</div>
-            <code className="text-sm font-mono text-green-400">$ {tool.input?.command}</code>
+        <div className="p-4 space-y-4">
+          <div className="text-xs text-text-muted">
+            <strong>File Path:</strong> {filePath}
           </div>
 
-          {tool.input?.description && (
-            <div className="text-xs text-text-muted">
-              <strong>Description:</strong> {tool.input.description}
+          {/* Diff Display */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-text-primary">Changes:</div>
+            <div className="bg-dark-bg rounded-lg border border-dark-border overflow-hidden">
+              {/* Removed Lines */}
+              {tool.input?.old_string && (
+                <div className="bg-red-900/20 border-l-4 border-red-500 p-3">
+                  <div className="text-xs text-red-300 mb-1">- Removed</div>
+                  <pre className="text-sm text-red-200 font-mono whitespace-pre-wrap">
+                    {tool.input.old_string}
+                  </pre>
+                </div>
+              )}
+              
+              {/* Added Lines */}
+              {tool.input?.new_string && (
+                <div className="bg-green-900/20 border-l-4 border-green-500 p-3">
+                  <div className="text-xs text-green-300 mb-1">+ Added</div>
+                  <pre className="text-sm text-green-200 font-mono whitespace-pre-wrap">
+                    {tool.input.new_string}
+                  </pre>
+                </div>
+              )}
             </div>
-          )}
-
-          {result && !result.error && (
-            <div className="bg-dark-bg rounded-lg p-3 border border-dark-border">
-              <div className="text-xs text-text-muted mb-2">Output:</div>
-              <pre className="text-sm text-text-primary whitespace-pre-wrap overflow-x-auto font-mono">
-                {typeof result.output === 'string' ? result.output : JSON.stringify(result.output, null, 2)}
-              </pre>
-            </div>
-          )}
+          </div>
 
           {result?.error && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">

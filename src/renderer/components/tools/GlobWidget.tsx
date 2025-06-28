@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Message } from '@shared/types';
 
-interface ListFilesWidgetProps {
+interface GlobWidgetProps {
   tool: Message;
   result?: Message;
 }
 
-export function ListFilesWidget({ tool, result }: ListFilesWidgetProps) {
+export function GlobWidget({ tool, result }: GlobWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const pattern = tool.input?.pattern || '';
   const path = tool.input?.path || 'Current directory';
