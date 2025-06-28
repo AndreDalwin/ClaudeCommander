@@ -3,16 +3,18 @@ import { HomeScreen } from './components/HomeScreen';
 import { ProjectsView } from './components/ProjectsView';
 import { ProjectDetailView } from './components/ProjectDetailView';
 import { SessionView } from './components/SessionView';
+import { SessionHistoryView } from './components/SessionHistoryView';
 import { NewSessionDialog } from './components/NewSessionDialog';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
 
-type ViewState = 'home' | 'projects' | 'project-detail' | 'session' | 'active-sessions';
+type ViewState = 'home' | 'projects' | 'project-detail' | 'session' | 'active-sessions' | 'session-history';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [sessions, setSessions] = useState<ClaudeSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<DiscoveredProject | null>(null);
+  const [selectedDiscoveredSession, setSelectedDiscoveredSession] = useState<DiscoveredSession | null>(null);
   const [showNewSession, setShowNewSession] = useState(false);
   const [claudeStatus, setClaudeStatus] = useState<{ connected: boolean; version: string; path: string } | null>(null);
   const [discoveredProjects, setDiscoveredProjects] = useState<DiscoveredProject[]>([]);
@@ -96,8 +98,8 @@ function App() {
   };
 
   const handleSelectDiscoveredSession = async (session: DiscoveredSession) => {
-    // For now, we'll show an alert. In the future, we can load the session history
-    alert(`Loading session: ${session.id}\nFrom: ${session.project_path}\nCreated: ${new Date(session.created_at * 1000).toLocaleString()}`);
+    setSelectedDiscoveredSession(session);
+    setCurrentView('session-history');
   };
 
   const stats = {
@@ -189,6 +191,16 @@ function App() {
             </div>
           </div>
         );
+      
+      case 'session-history':
+        return selectedDiscoveredSession && selectedProject ? (
+          <SessionHistoryView
+            projectId={selectedProject.id}
+            sessionId={selectedDiscoveredSession.id}
+            sessionName={selectedDiscoveredSession.first_message || `Session ${selectedDiscoveredSession.id.substring(0, 8)}`}
+            onBack={() => setCurrentView('project-detail')}
+          />
+        ) : null;
       
       default:
         return null;
