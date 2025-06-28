@@ -187,14 +187,8 @@ export function SessionView({ sessionId, onRefreshSessions }: SessionViewProps) 
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f]">
-      {/* Session Header */}
-      <div className="px-6 py-4 bg-[#1a1a1a]/95 backdrop-blur border-b border-[#2a2a2a]">
-        <h2 className="text-xl font-semibold text-white mb-1">{sessionInfo?.name || 'Loading...'}</h2>
-        <span className="text-sm text-gray-400">{sessionInfo?.projectPath}</span>
-      </div>
-
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6">
+      <div className="flex-1 overflow-y-auto px-6 py-6">
         <MessageList messages={messages} />
         <div ref={messagesEndRef} />
       </div>

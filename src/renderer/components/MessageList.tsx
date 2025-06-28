@@ -79,8 +79,12 @@ export function MessageList({ messages }: MessageListProps) {
       
       if (!textContent) return null;
       
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="flex justify-start mb-6 animate-fade-in-up">
+        <div key={index} className={`flex justify-start animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
             <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
               <Bot className="w-3 h-3 text-blue-400" />
@@ -113,8 +117,12 @@ export function MessageList({ messages }: MessageListProps) {
       
       const isExpanded = expandedThinking.has(index);
       
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className="p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
             <div 
               className="flex items-center justify-between cursor-pointer hover:bg-[#2a2a2a] p-2 rounded-lg transition-colors"
@@ -153,8 +161,12 @@ export function MessageList({ messages }: MessageListProps) {
       );
       const result = resultIndex !== -1 ? filteredMessages[resultIndex] : undefined;
 
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+
       return (
-        <div key={index} className="mb-4 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           {renderToolWidget(message, result)}
         </div>
       );
@@ -162,8 +174,12 @@ export function MessageList({ messages }: MessageListProps) {
 
     // Handle result messages (execution summaries)
     if (message.type === 'result') {
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-emerald-400" />
@@ -181,8 +197,12 @@ export function MessageList({ messages }: MessageListProps) {
     if (message.type === 'tool_result') {
       const isError = message.is_error;
       
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className={`p-4 rounded-2xl shadow-lg ${isError ? 'bg-red-500/10 border border-red-500/30' : 'bg-[#1a1a1a] border border-[#2a2a2a]'}`}>
             <div className="flex items-center gap-2 mb-2">
               {isError ? (
@@ -207,8 +227,12 @@ export function MessageList({ messages }: MessageListProps) {
       const isReminder = message.reminder || message.system?.includes('reminder');
       const isInit = message.subtype === 'init';
       
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className={`p-4 rounded-2xl shadow-lg ${
             isReminder ? 'bg-yellow-500/10 border border-yellow-500/30' : 
             isInit ? 'bg-blue-500/10 border border-blue-500/30' : 
@@ -240,8 +264,12 @@ export function MessageList({ messages }: MessageListProps) {
 
     // Handle usage messages
     if (message.type === 'usage' && message.usage) {
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className="p-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <BarChart3 className="w-3 h-3" />
@@ -258,8 +286,12 @@ export function MessageList({ messages }: MessageListProps) {
 
     // Handle errors
     if (message.type === 'error') {
+      // Check if previous message is from user for spacing
+      const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+      const isAfterUser = prevMessage?.type === 'user';
+      
       return (
-        <div key={index} className="mb-6 animate-fade-in-up">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
           <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg">
             <div className="flex items-center gap-2 font-semibold mb-2 text-red-400">
               <XCircle className="w-4 h-4" />
@@ -272,8 +304,12 @@ export function MessageList({ messages }: MessageListProps) {
     }
 
     // Handle raw/unknown messages
+    // Check if previous message is from user for spacing
+    const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+    const isAfterUser = prevMessage?.type === 'user';
+    
     return (
-      <div key={index} className="mb-6 animate-fade-in-up">
+      <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
         <div className="p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
           <div className="text-xs text-gray-400 mb-2 flex items-center gap-2">
             <Info className="w-3 h-3" />

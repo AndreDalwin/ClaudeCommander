@@ -226,53 +226,40 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="bg-[#1a1a1a]/95 backdrop-blur border-b border-[#2a2a2a] p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-6">
-            <button 
-              className="flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444]"
-              onClick={onBack}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Session History</h2>
-                {sessionName && <p className="text-gray-400">{sessionName}</p>}
-              </div>
-            </div>
+    <div className="h-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
+      {/* Session Info Header */}
+      <div className="px-6 py-4 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+            <MessageSquare className="w-4 h-4 text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">Session History</h2>
+            {sessionName && <p className="text-sm text-gray-400 truncate">{sessionName}</p>}
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center h-96">
-              <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />
-              <div className="text-gray-400">Loading session history...</div>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center h-96">
-              <AlertCircle className="w-8 h-8 text-red-400 mb-4" />
-              <div className="text-red-400">Error: {error}</div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-96">
-              <MessageSquare className="w-8 h-8 text-gray-500 mb-4" />
-              <div className="text-gray-400">No messages in this session</div>
-            </div>
-          ) : (
-            <MessageList messages={messages} />
-          )}
-        </div>
+      <div className="flex-1 overflow-y-auto px-6 py-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-96">
+            <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />
+            <div className="text-gray-400">Loading session history...</div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-96">
+            <AlertCircle className="w-8 h-8 text-red-400 mb-4" />
+            <div className="text-red-400">Error: {error}</div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-96">
+            <MessageSquare className="w-8 h-8 text-gray-500 mb-4" />
+            <div className="text-gray-400">No messages in this session</div>
+          </div>
+        ) : (
+          <MessageList messages={messages} />
+        )}
       </div>
     </div>
   );

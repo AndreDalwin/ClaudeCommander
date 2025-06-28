@@ -4,8 +4,10 @@ import { ProjectsView } from './components/ProjectsView';
 import { ProjectDetailView } from './components/ProjectDetailView';
 import { SessionView } from './components/SessionView';
 import { SessionHistoryView } from './components/SessionHistoryView';
+import { SessionList } from './components/SessionList';
 import { NewSessionDialog } from './components/NewSessionDialog';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
+import { ArrowLeft, Plus, FolderOpen } from 'lucide-react';
 
 type ViewState = 'home' | 'projects' | 'project-detail' | 'session' | 'active-sessions' | 'session-history';
 
@@ -19,12 +21,28 @@ function App() {
   const [claudeStatus, setClaudeStatus] = useState<{ connected: boolean; version: string; path: string } | null>(null);
   const [discoveredProjects, setDiscoveredProjects] = useState<DiscoveredProject[]>([]);
   const [newSessionPath, setNewSessionPath] = useState<string>('');
+  const [projectDiscoveredSessions, setProjectDiscoveredSessions] = useState<DiscoveredSession[]>([]);
 
   useEffect(() => {
     loadSessions();
     loadClaudeStatus();
     loadDiscoveredProjects();
   }, []);
+
+  // Load discovered sessions for current project when in session-history view
+  useEffect(() => {
+    if (currentView === 'session-history' && selectedProject) {
+      const loadProjectSessions = async () => {
+        try {
+          const sessions = await window.claudeAPI.getDiscoveredSessions(selectedProject.id);
+          setProjectDiscoveredSessions(sessions);
+        } catch (error) {
+          console.error('Failed to load project sessions:', error);
+        }
+      };
+      loadProjectSessions();
+    }
+  }, [currentView, selectedProject]);
 
   const loadSessions = async () => {
     try {
@@ -160,33 +178,74 @@ function App() {
         );
       
       case 'active-sessions':
+        const activeSessions = sessions.filter(s => s.isActive);
         return (
-          <div className="w-full h-screen bg-dark-bg overflow-y-auto">
-            <div className="flex items-center gap-5 px-10 py-5 bg-[#1a1a1a] border-b border-dark-border">
-              <button 
-                className="flex items-center gap-2 px-5 py-2.5 bg-dark-border border border-[#3e3e42] rounded-md text-text-primary text-sm transition-all duration-200 hover:bg-[#37373d] hover:-translate-x-0.5"
-                onClick={() => setCurrentView('home')}
-              >
-                ← Back
-              </button>
-              <h2 className="text-3xl font-semibold flex-1">Active Sessions</h2>
-            </div>
-            <div className="p-5 lg:p-10">
-              {sessions.filter(s => s.isActive).map(session => (
-                <div 
-                  key={session.id}
-                  className="bg-dark-surface border border-dark-border rounded-lg p-5 mb-4 cursor-pointer transition-all duration-200 hover:bg-dark-hover hover:border-[#3e3e42] hover:translate-x-1"
-                  onClick={() => {
-                    setActiveSessionId(session.id);
-                    setCurrentView('session');
-                  }}
-                >
-                  <div className="text-lg font-semibold text-text-primary mb-2">{session.name}</div>
-                  <div className="text-sm text-text-muted">{session.projectPath}</div>
+          <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-y-auto">
+            <div className="bg-[#1a1a1a]/95 backdrop-blur border-b border-[#2a2a2a] p-8">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-center gap-6">
+                  <button 
+                    className="flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444]"
+                    onClick={() => setCurrentView('home')}
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </button>
+                  <div>
+                    <h2 className="text-3xl font-bold text-white">Active Sessions</h2>
+                    <p className="text-gray-400">Running Claude Code sessions</p>
+                  </div>
                 </div>
-              ))}
-              {sessions.filter(s => s.isActive).length === 0 && (
-                <div className="text-center py-16 text-text-muted">No active sessions</div>
+              </div>
+            </div>
+            
+            <div className="max-w-7xl mx-auto p-8">
+              {activeSessions.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="w-20 h-20 bg-gray-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Plus className="w-10 h-10 text-gray-500" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-white mb-2">No active sessions</h3>
+                  <p className="text-gray-400 mb-8 max-w-md mx-auto">Create a new session to start collaborating with Claude Code.</p>
+                  <button 
+                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-600 shadow-lg mx-auto"
+                    onClick={() => setShowNewSession(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Session
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeSessions.map(session => (
+                    <div 
+                      key={session.id}
+                      className="group bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-[#202020] hover:border-[#3a3a3a] hover:scale-[1.01]"
+                      onClick={() => {
+                        setActiveSessionId(session.id);
+                        setCurrentView('session');
+                      }}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                          <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-white truncate">{session.name}</h3>
+                            <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg text-xs font-medium">
+                              Active
+                            </span>
+                          </div>
+                          <div className="text-gray-400 text-sm truncate mb-2">{session.projectPath}</div>
+                          <div className="text-xs text-gray-500">
+                            {session.messageCount} messages • Created {new Date(session.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -207,35 +266,142 @@ function App() {
     }
   };
 
-  return (
-    <div className="flex h-screen bg-dark-bg text-text-primary custom-scrollbar">
-      {currentView === 'session' ? (
-        <>
-          <aside className="w-52 bg-dark-hover border-r border-[#3e3e42] flex flex-col">
-            <div className="p-5 border-b border-[#3e3e42]">
-              <button 
-                className="w-full py-2.5 px-4 bg-dark-border border border-[#3e3e42] rounded text-text-primary text-sm transition-all duration-300 hover:bg-[#37373d] hover:border-brand-blue"
-                onClick={() => setCurrentView('home')}
-                title="Back to Home"
-              >
-                ← Home
-              </button>
-            </div>
-            <div className="p-5">
-              {sessions.find(s => s.id === activeSessionId) && (
-                <>
-                  <h3 className="mb-4 text-sm text-text-secondary uppercase tracking-wider">Current Session</h3>
-                  <div className="text-base font-medium mb-2">
-                    {sessions.find(s => s.id === activeSessionId)?.name}
+  const renderSidebar = () => {
+    return (
+      <aside className="w-80 bg-gradient-to-b from-[#1a1a1a] to-[#111111] border-r border-[#2a2a2a] flex flex-col shadow-xl">
+        {/* Header with Navigation */}
+        <div className="p-6 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
+          <div className="flex gap-3 mb-4">
+            <button 
+              className="flex items-center gap-2 px-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444] flex-1"
+              onClick={() => setCurrentView('projects')}
+            >
+              <FolderOpen className="w-4 h-4" />
+              Projects
+            </button>
+            <button 
+              className="flex items-center gap-2 px-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444] flex-1"
+              onClick={() => setCurrentView('home')}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Home
+            </button>
+          </div>
+          
+          {/* New Session Button */}
+          <button 
+            className="w-full flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-600 shadow-lg"
+            onClick={() => {
+              if (currentView === 'session-history' && selectedProject) {
+                setNewSessionPath(selectedProject.path);
+              }
+              setShowNewSession(true);
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            New Session
+          </button>
+        </div>
+
+        {/* Sessions List */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {currentView === 'session-history' ? (
+            <>
+              {/* Project Sessions */}
+              <div className="p-4 border-b border-[#2a2a2a]">
+                <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">
+                  {selectedProject ? `${selectedProject.path.split('/').pop()} Sessions` : 'Project Sessions'}
+                </h3>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {projectDiscoveredSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
+                      selectedDiscoveredSession?.id === session.id
+                        ? 'bg-[#2a2a2a] border-blue-500/50 shadow-lg' 
+                        : 'bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#2a2a2a] hover:border-[#3a3a3a]'
+                    }`}
+                    onClick={() => {
+                      setSelectedDiscoveredSession(session);
+                      setCurrentView('session-history');
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/20">
+                        <div className="w-3 h-3 text-blue-400">📜</div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-white mb-1 truncate">
+                          {session.first_message || `Session ${session.id.substring(0, 8)}`}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(session.created_at * 1000).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-text-muted break-all">
-                    {sessions.find(s => s.id === activeSessionId)?.projectPath}
+                ))}
+                
+                {projectDiscoveredSessions.length === 0 && (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    No sessions found
+                  </div>
+                )}
+              </div>
+              
+              {/* Active Sessions Section */}
+              {sessions.length > 0 && (
+                <>
+                  <div className="p-4 border-b border-[#2a2a2a] border-t border-[#2a2a2a]">
+                    <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">Active Sessions</h3>
+                  </div>
+                  
+                  <div className="overflow-y-auto">
+                    <SessionList 
+                      sessions={sessions}
+                      activeSessionId={activeSessionId}
+                      onSelectSession={(sessionId) => {
+                        setActiveSessionId(sessionId);
+                        setCurrentView('session');
+                      }}
+                    />
                   </div>
                 </>
               )}
-            </div>
-          </aside>
-          <main className="flex-1">
+            </>
+          ) : (
+            <>
+              <div className="p-4 border-b border-[#2a2a2a]">
+                <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">All Sessions</h3>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                <SessionList 
+                  sessions={sessions}
+                  activeSessionId={activeSessionId}
+                  onSelectSession={(sessionId) => {
+                    setActiveSessionId(sessionId);
+                    setCurrentView('session');
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </aside>
+    );
+  };
+
+  return (
+    <div className="flex h-screen bg-dark-bg text-text-primary custom-scrollbar">
+      {(currentView === 'session' || currentView === 'session-history') ? (
+        <>
+          {renderSidebar()}
+          {/* Main Content Area */}
+          <main className="flex-1 flex flex-col">
             {renderContent()}
           </main>
         </>
