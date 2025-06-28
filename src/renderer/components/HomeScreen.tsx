@@ -14,14 +14,14 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
   return (
     <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-[#0d0d0d] to-[#1a1a1a]">
       <div className="text-center max-w-4xl px-10">
-        <div className="mb-12 animate-fade-in-up">
+        <div className="mb-12">
           <h1 className="text-5xl font-extrabold tracking-wider mb-2 bg-gradient-to-r from-[#0e639c] to-[#1177bb] bg-clip-text text-transparent">
             COMMANDER IN CHIEF
           </h1>
           <p className="text-lg text-text-secondary">Claude Code Session Manager</p>
         </div>
 
-        <div className="mb-10 animate-fade-in-up animation-delay-200">
+        <div className="mb-10">
           {claudeStatus ? (
             <div className="inline-flex flex-col items-center px-10 py-5 bg-dark-surface rounded-xl border border-dark-border">
               <div className={`flex items-center gap-3 text-base font-medium ${claudeStatus.connected ? 'text-green-500' : 'text-red-500'}`}>
@@ -39,7 +39,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
           )}
         </div>
 
-        <div className="flex gap-5 justify-center mb-10 animate-fade-in-up animation-delay-400">
+        <div className="flex gap-5 justify-center mb-10">
           <div className="bg-dark-surface px-8 py-7 rounded-xl border border-dark-border min-w-[150px] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
             <div className="text-4xl font-bold text-brand-blue mb-2">{stats.totalProjects}</div>
             <div className="text-sm text-text-secondary">Projects</div>
@@ -54,7 +54,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
           </div>
         </div>
 
-        <div className="flex gap-5 justify-center mb-10 animate-fade-in-up animation-delay-600">
+        <div className="flex gap-5 justify-center mb-10">
           <button 
             className="flex items-center gap-3 px-8 py-4 bg-brand-blue text-white rounded-lg text-base font-medium transition-all duration-300 hover:bg-brand-blue-light hover:-translate-y-0.5 hover:shadow-lg"
             onClick={() => onNavigate('projects')}
@@ -72,7 +72,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
           </button>
         </div>
 
-        <div className="animate-fade-in-up animation-delay-800">
+        <div>
           <h3 className="mb-5 text-text-secondary">Quick Actions</h3>
           <div className="flex gap-4 justify-center">
             <button 
