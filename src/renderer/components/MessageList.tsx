@@ -41,7 +41,7 @@ export function MessageList({ messages }: MessageListProps) {
       let content = '';
       if (typeof message.message?.content === 'string') {
         content = message.message.content;
-      } else if (Array.isArray(message.message?.content)) {
+      } else if (message.message && Array.isArray(message.message.content)) {
         content = message.message.content
           .map((item: any) => {
             if (typeof item === 'string') return item;

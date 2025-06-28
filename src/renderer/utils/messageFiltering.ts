@@ -43,7 +43,7 @@ export function isEmptyMessage(message: Message): boolean {
       return !message.message.content.trim();
     }
     if (Array.isArray(message.message.content)) {
-      return !message.message.content.some(item => {
+      return !message.message.content.some((item: any) => {
         if (typeof item === 'string') return item.trim();
         if (item?.text) return item.text.trim();
         return false;

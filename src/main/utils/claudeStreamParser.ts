@@ -4,8 +4,8 @@ import { Message } from '@shared/types';
 export class ClaudeStreamParser {
   private sessionId: string;
   private mainWindow: BrowserWindow;
-  private buffer: string = '';
-  private currentTextMessage: string = '';
+  private buffer = '';
+  private currentTextMessage = '';
   private messages: Message[] = [];
 
   constructor(sessionId: string, mainWindow: BrowserWindow) {

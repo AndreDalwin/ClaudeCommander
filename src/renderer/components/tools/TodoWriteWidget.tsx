@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Message } from '@shared/types';
 
 interface TodoWriteWidgetProps {
@@ -7,7 +7,7 @@ interface TodoWriteWidgetProps {
 }
 
 export function TodoWriteWidget({ tool, result }: TodoWriteWidgetProps) {
-  const [isExpanded, setIsExpanded] = useState(true); // Always expanded
+  // Always expanded but compact design
   const todos = tool.input?.todos || [];
   const isSuccess = !result?.error;
   

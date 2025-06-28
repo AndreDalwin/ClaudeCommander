@@ -12,7 +12,7 @@ export class ClaudeSession extends EventEmitter {
   projectPath: string;
   process: ChildProcess | null = null;
   messages: Message[] = [];
-  isActive: boolean = false;
+  isActive = false;
   createdAt: string;
   private streamParser?: ClaudeStreamParser;
 
@@ -24,7 +24,7 @@ export class ClaudeSession extends EventEmitter {
     this.createdAt = new Date().toISOString();
   }
 
-  async start(claudePath: string, prompt: string, model: string = 'opus', mainWindow: BrowserWindow): Promise<void> {
+  async start(claudePath: string, prompt: string, model = 'opus', mainWindow: BrowserWindow): Promise<void> {
     if (this.isActive) {
       throw new Error('Session already active');
     }
@@ -121,13 +121,13 @@ export class ClaudeSession extends EventEmitter {
   }
 
 
-  async continue(claudePath: string, prompt: string, model: string = 'opus', mainWindow: BrowserWindow): Promise<void> {
+  async continue(claudePath: string, prompt: string, model = 'opus', mainWindow: BrowserWindow): Promise<void> {
     // The start method already handles continuation with the -c flag
     // So we can just call start
     await this.start(claudePath, prompt, model, mainWindow);
   }
 
-  async resume(claudePath: string, prompt: string, model: string = 'opus', mainWindow: BrowserWindow): Promise<void> {
+  async resume(claudePath: string, prompt: string, model = 'opus', mainWindow: BrowserWindow): Promise<void> {
     if (this.isActive) {
       throw new Error('Session already active');
     }

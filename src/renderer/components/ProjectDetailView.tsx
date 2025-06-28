@@ -40,7 +40,7 @@ export function ProjectDetailView({ project, onSelectSession, onBack, onNewSessi
     return date.toLocaleDateString();
   };
 
-  const truncateMessage = (message: string | undefined, maxLength: number = 100) => {
+  const truncateMessage = (message: string | undefined, maxLength = 100) => {
     if (!message) return 'No message';
     if (message.length <= maxLength) return message;
     return message.substring(0, maxLength) + '...';
