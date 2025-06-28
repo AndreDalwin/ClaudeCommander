@@ -11,40 +11,36 @@ export function BashWidget({ tool, result }: BashWidgetProps) {
   const isSuccess = !result?.error;
   
   return (
-    <div className="border border-dark-border rounded-xl bg-dark-surface overflow-hidden">
-      {/* Header */}
+    <div className="border border-dark-border rounded-lg bg-dark-surface overflow-hidden">
+      {/* Compact Header */}
       <div 
-        className="flex items-center justify-between p-4 bg-dark-hover border-b border-dark-border cursor-pointer hover:bg-[#2a2a2c] transition-colors"
+        className="flex items-center justify-between px-3 py-2 bg-dark-hover cursor-pointer hover:bg-[#2a2a2c] transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 bg-gray-500/20 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
-          <div>
-            <div className="font-medium text-text-primary">Bash Command</div>
-            <div className="text-sm text-text-secondary font-mono">{tool.input?.command || 'Unknown command'}</div>
-          </div>
+          <div className="text-sm font-medium text-text-primary">Bash</div>
+          <div className="text-xs text-text-secondary font-mono truncate max-w-xs">{tool.input?.command || 'Unknown command'}</div>
         </div>
         <div className="flex items-center gap-2">
           {isSuccess ? (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-3 h-3 text-green-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Complete
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-red-400 text-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-3 h-3 text-red-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Failed
             </div>
           )}
-          <svg className={`w-4 h-4 transition-transform text-text-secondary ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-3 h-3 transition-transform text-text-secondary ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
@@ -52,7 +48,7 @@ export function BashWidget({ tool, result }: BashWidgetProps) {
 
       {/* Content */}
       {isExpanded && (
-        <div className="p-4 space-y-3">
+        <div className="border-t border-dark-border p-3 space-y-3">
           <div className="bg-dark-bg rounded-lg p-3 border border-dark-border">
             <div className="text-xs text-text-muted mb-2">Command:</div>
             <code className="text-sm font-mono text-green-400">$ {tool.input?.command}</code>

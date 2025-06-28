@@ -8,3 +8,5 @@ export { GenericToolWidget } from './GenericToolWidget';
 export { EditWidget } from './EditWidget';
 export { MultiEditWidget } from './MultiEditWidget';
 export { GlobWidget } from './GlobWidget';
+export { WriteWidget } from './WriteWidget';
+export { TodoWriteWidget } from './TodoWriteWidget';

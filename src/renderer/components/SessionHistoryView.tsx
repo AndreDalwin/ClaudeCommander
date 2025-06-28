@@ -25,10 +25,19 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
       
       const history = await window.claudeAPI.loadSessionHistory({ projectId, sessionId });
       
+      // Debug: Log the session object
+      console.log('Session history object:', history);
+      console.log('Session entries:', history.entries);
+      
       // Convert the JSONL entries to Message format
       const convertedMessages: Message[] = [];
       
       for (const entry of history.entries) {
+        // Skip tool_result messages - they should be handled with their corresponding tool_use
+        if (entry.message?.content?.[0]?.type === 'tool_result') {
+          continue;
+        }
+        
         // Handle user messages
         if (entry.type === 'user' && entry.message) {
           convertedMessages.push({

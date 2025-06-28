@@ -8,6 +8,8 @@ import {
   StrReplaceEditorWidget,
   BashWidget,
   ListFilesWidget,
+  WriteWidget,
+  TodoWriteWidget,
   GenericToolWidget
 } from './index';
 
@@ -33,6 +35,10 @@ export function ToolWidget({ message, result }: ToolWidgetProps) {
         return <BashWidget tool={message} result={result} />;
       case 'list_files':
         return <ListFilesWidget tool={message} result={result} />;
+      case 'Write':
+        return <WriteWidget tool={message} result={result} />;
+      case 'TodoWrite':
+        return <TodoWriteWidget tool={message} result={result} />;
       default:
         return <GenericToolWidget tool={message} result={result} />;
     }

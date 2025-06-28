@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Message } from '@shared/types';
 
-interface StrReplaceEditorWidgetProps {
+interface WriteWidgetProps {
   tool: Message;
   result?: Message;
 }
 
-export function StrReplaceEditorWidget({ tool, result }: StrReplaceEditorWidgetProps) {
+export function WriteWidget({ tool, result }: WriteWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const filePath = tool.input?.file_path || 'Unknown file';
   const fileName = filePath.split('/').pop() || filePath;
+  const content = tool.input?.content || '';
   const isSuccess = !result?.error;
   
   return (
@@ -20,15 +21,18 @@ export function StrReplaceEditorWidget({ tool, result }: StrReplaceEditorWidgetP
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-orange-500/20 rounded flex items-center justify-center">
-            <svg className="w-3 h-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <div className="w-5 h-5 bg-green-500/20 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
-          <div className="text-sm font-medium text-text-primary">StrReplace</div>
+          <div className="text-sm font-medium text-text-primary">Write File</div>
           <div className="text-xs text-text-secondary">{fileName}</div>
         </div>
         <div className="flex items-center gap-2">
+          <div className="px-1.5 py-0.5 bg-green-500/20 rounded text-xs text-green-300">
+            {content.length}c
+          </div>
           {isSuccess ? (
             <div className="w-3 h-3 text-green-400">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,31 +59,16 @@ export function StrReplaceEditorWidget({ tool, result }: StrReplaceEditorWidgetP
             <strong>File Path:</strong> {filePath}
           </div>
 
-          {/* Diff Display */}
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-text-primary">Changes:</div>
-            <div className="bg-dark-bg rounded-lg border border-dark-border overflow-hidden">
-              {/* Removed Lines */}
-              {tool.input?.old_string && (
-                <div className="bg-red-900/20 border-l-4 border-red-500 p-3">
-                  <div className="text-xs text-red-300 mb-1">- Removed</div>
-                  <pre className="text-sm text-red-200 font-mono whitespace-pre-wrap">
-                    {tool.input.old_string}
-                  </pre>
-                </div>
-              )}
-              
-              {/* Added Lines */}
-              {tool.input?.new_string && (
-                <div className="bg-green-900/20 border-l-4 border-green-500 p-3">
-                  <div className="text-xs text-green-300 mb-1">+ Added</div>
-                  <pre className="text-sm text-green-200 font-mono whitespace-pre-wrap">
-                    {tool.input.new_string}
-                  </pre>
-                </div>
-              )}
+          {content && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-text-primary">Content:</div>
+              <div className="bg-dark-bg rounded-lg border border-dark-border p-3 max-h-64 overflow-y-auto">
+                <pre className="text-sm text-text-primary whitespace-pre-wrap font-mono">
+                  {content}
+                </pre>
+              </div>
             </div>
-          </div>
+          )}
 
           {result?.error && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">

@@ -14,45 +14,41 @@ export function GlobWidget({ tool, result }: GlobWidgetProps) {
   const files = result?.output ? (typeof result.output === 'string' ? result.output.split('\n').filter(Boolean) : []) : [];
   
   return (
-    <div className="border border-dark-border rounded-xl bg-dark-surface overflow-hidden">
-      {/* Header */}
+    <div className="border border-dark-border rounded-lg bg-dark-surface overflow-hidden">
+      {/* Compact Header */}
       <div 
-        className="flex items-center justify-between p-4 bg-dark-hover border-b border-dark-border cursor-pointer hover:bg-[#2a2a2c] transition-colors"
+        className="flex items-center justify-between px-3 py-2 bg-dark-hover cursor-pointer hover:bg-[#2a2a2c] transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 bg-cyan-500/20 rounded flex items-center justify-center">
+            <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div>
-            <div className="font-medium text-text-primary">File Search</div>
-            <div className="text-sm text-text-secondary font-mono">{pattern}</div>
-          </div>
+          <div className="text-sm font-medium text-text-primary">Glob</div>
+          <div className="text-xs text-text-secondary font-mono">{pattern}</div>
         </div>
         <div className="flex items-center gap-2">
           {isSuccess && (
-            <div className="px-2 py-1 bg-cyan-500/20 rounded text-xs text-cyan-300">
-              {files.length} files
+            <div className="px-1.5 py-0.5 bg-cyan-500/20 rounded text-xs text-cyan-300">
+              {files.length}
             </div>
           )}
           {isSuccess ? (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-3 h-3 text-green-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Found
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-red-400 text-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-3 h-3 text-red-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Failed
             </div>
           )}
-          <svg className={`w-4 h-4 transition-transform text-text-secondary ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-3 h-3 transition-transform text-text-secondary ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
@@ -60,7 +56,7 @@ export function GlobWidget({ tool, result }: GlobWidgetProps) {
 
       {/* Content */}
       {isExpanded && (
-        <div className="p-4 space-y-3">
+        <div className="border-t border-dark-border p-3 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div className="text-text-muted">
               <strong>Pattern:</strong> <span className="font-mono">{pattern}</span>
