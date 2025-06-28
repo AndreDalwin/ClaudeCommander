@@ -18,13 +18,8 @@ export function MessageList({ messages }: MessageListProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Filter out caveat messages
-  const filteredMessages = messages.filter(msg => {
-    if (msg.type === 'system' && msg.system?.includes('Conversation-specific instructions')) {
-      return false;
-    }
-    return true;
-  });
+  // Messages are already filtered by SessionHistoryView, so use them directly
+  const filteredMessages = messages;
 
   const toggleThinking = (index: number) => {
     const newExpanded = new Set(expandedThinking);
@@ -164,21 +159,53 @@ export function MessageList({ messages }: MessageListProps) {
       );
     }
 
-    // Skip tool_result messages as they're handled with tool_use
+    // Handle result messages (execution summaries)
+    if (message.type === 'result') {
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className="p-3 rounded-lg bg-green-900/20 border border-green-700/30">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold text-green-400">✅ Task Complete</span>
+            </div>
+            <div className="text-sm text-text-secondary whitespace-pre-wrap">
+              {message.text || message.summary || 'Task completed successfully'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Handle tool_result messages (only shown if they have errors or no custom widget)
     if (message.type === 'tool_result') {
-      return null;
+      const isError = message.is_error;
+      
+      return (
+        <div key={index} className="mb-4 animate-fade-in-up">
+          <div className={`p-3 rounded-lg ${isError ? 'bg-red-900/20 border border-red-700/30' : 'bg-dark-surface border border-dark-border'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-sm font-semibold ${isError ? 'text-red-400' : 'text-text-primary'}`}>
+                {isError ? '❌ Tool Error' : '🔧 Tool Result'}
+              </span>
+            </div>
+            <div className="text-sm text-text-secondary whitespace-pre-wrap font-mono">
+              {typeof message.output === 'string' ? message.output : JSON.stringify(message.output, null, 2)}
+            </div>
+          </div>
+        </div>
+      );
     }
 
     // Handle system messages
     if (message.type === 'system') {
       const isReminder = message.reminder || message.system?.includes('reminder');
+      const isInit = message.subtype === 'init';
       
       return (
         <div key={index} className="mb-4 animate-fade-in-up">
-          <div className={`p-3 rounded-lg ${isReminder ? 'bg-yellow-900/20 border border-yellow-700/30' : 'bg-blue-900/20 border border-blue-700/30'}`}>
+          <div className={`p-3 rounded-lg ${isReminder ? 'bg-yellow-900/20 border border-yellow-700/30' : isInit ? 'bg-blue-900/20 border border-blue-700/30' : 'bg-gray-900/20 border border-gray-700/30'}`}>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-semibold">
-                {isReminder ? '⚠️ System Reminder' : 'ℹ️ System Message'}
+                {isReminder ? '⚠️ System Reminder' : isInit ? '🚀 Session Started' : 'ℹ️ System Message'}
               </span>
             </div>
             <div className="text-sm text-text-secondary whitespace-pre-wrap">

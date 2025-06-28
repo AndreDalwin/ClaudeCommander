@@ -8,8 +8,14 @@ export interface ClaudeSession {
 }
 
 export interface Message {
-  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw';
+  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw' | 'result';
   timestamp: string;
+  // Meta message indicators
+  isMeta?: boolean;
+  is_error?: boolean;
+  subtype?: string; // For system init messages, etc.
+  leafUuid?: string; // Reference point indicators
+  summary?: string; // Summary content for meta messages
   // User message
   message?: {
     role: 'user' | 'assistant';

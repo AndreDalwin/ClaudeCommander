@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { Message } from '@shared/types';
+import { filterMessages } from '../utils/messageFiltering';
 
 interface SessionHistoryViewProps {
   projectId: string;
@@ -33,17 +34,19 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
       const convertedMessages: Message[] = [];
       
       for (const entry of history.entries) {
-        // Skip tool_result messages - they should be handled with their corresponding tool_use
-        if (entry.message?.content?.[0]?.type === 'tool_result') {
-          continue;
-        }
+        // Process all entries, filtering will be done later
         
         // Handle user messages
         if (entry.type === 'user' && entry.message) {
           convertedMessages.push({
             type: 'user',
             message: entry.message,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle assistant messages
@@ -56,7 +59,13 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
                   type: 'text',
                   text: content.text,
                   accumulatedText: content.text,
-                  timestamp: entry.timestamp || new Date().toISOString()
+                  timestamp: entry.timestamp || new Date().toISOString(),
+                  isMeta: entry.isMeta,
+                  is_error: entry.is_error,
+                  subtype: entry.subtype,
+                  leafUuid: entry.leafUuid,
+                  summary: entry.summary,
+                  message: entry.message
                 });
               } else if (content.type === 'tool_use') {
                 convertedMessages.push({
@@ -64,7 +73,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
                   name: content.name,
                   input: content.input,
                   tool_use_id: content.id,
-                  timestamp: entry.timestamp || new Date().toISOString()
+                  timestamp: entry.timestamp || new Date().toISOString(),
+                  isMeta: entry.isMeta,
+                  is_error: entry.is_error,
+                  subtype: entry.subtype,
+                  leafUuid: entry.leafUuid,
+                  summary: entry.summary
                 });
               }
             }
@@ -76,7 +90,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             type: 'text',
             text: entry.text,
             accumulatedText: entry.text,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle thinking messages
@@ -85,7 +104,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             type: 'thinking',
             thinking: entry.thinking,
             accumulatedThinking: entry.thinking,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle tool use
@@ -95,7 +119,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             name: entry.name,
             input: entry.input,
             tool_use_id: entry.id || entry.tool_use_id,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle tool result
@@ -104,7 +133,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             type: 'tool_result',
             output: entry.output,
             tool_use_id_result: entry.tool_use_id || entry.id,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error || entry.error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle system messages
@@ -113,7 +147,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
             type: 'system',
             system: entry.system,
             reminder: entry.reminder || false,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle usage messages
@@ -121,7 +160,12 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           convertedMessages.push({
             type: 'usage',
             usage: entry.usage,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle error messages
@@ -133,7 +177,25 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           convertedMessages.push({
             type: 'error',
             error: typeof errorText === 'string' ? errorText : JSON.stringify(errorText),
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: true, // Error messages are always errors
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
+          });
+        }
+        // Handle result messages (execution summaries)
+        else if (entry.type === 'result') {
+          convertedMessages.push({
+            type: 'result',
+            text: entry.text || entry.summary || 'Task completed',
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
         // Handle raw messages for anything else
@@ -141,12 +203,19 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           convertedMessages.push({
             type: 'raw',
             ...entry,
-            timestamp: entry.timestamp || new Date().toISOString()
+            timestamp: entry.timestamp || new Date().toISOString(),
+            isMeta: entry.isMeta,
+            is_error: entry.is_error,
+            subtype: entry.subtype,
+            leafUuid: entry.leafUuid,
+            summary: entry.summary
           });
         }
       }
       
-      setMessages(convertedMessages);
+      // Apply comprehensive filtering to the converted messages
+      const filteredMessages = filterMessages(convertedMessages);
+      setMessages(filteredMessages);
     } catch (err) {
       console.error('Failed to load session history:', err);
       setError(err instanceof Error ? err.message : 'Failed to load session history');

@@ -32,6 +32,7 @@ export function ToolWidget({ message, result }: ToolWidgetProps) {
       case 'str_replace_editor':
         return <StrReplaceEditorWidget tool={message} result={result} />;
       case 'bash':
+      case 'Bash':
         return <BashWidget tool={message} result={result} />;
       case 'list_files':
         return <ListFilesWidget tool={message} result={result} />;
