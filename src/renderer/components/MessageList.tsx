@@ -304,7 +304,7 @@ export function MessageList({ messages }: MessageListProps) {
     // Handle assistant messages (raw format from streaming)
     if (message.type === 'assistant' && message.message) {
       // Extract content from assistant messages that weren't parsed by the stream parser
-      const assistantContent: JSX.Element[] = [];
+      const assistantContent: React.ReactElement[] = [];
       
       if (message.message.content && Array.isArray(message.message.content)) {
         message.message.content.forEach((content: any, contentIndex: number) => {
