@@ -72,23 +72,27 @@ export class SessionDiscovery {
       
       if (jsonlFile) {
         const filePath = path.join(projectDir, jsonlFile);
-        const firstLine = await this.readFirstLine(filePath);
-        
-        if (firstLine) {
-          try {
-            const data = JSON.parse(firstLine);
-            if (data.cwd) return data.cwd;
-          } catch (error) {
-            console.error('Failed to parse first line:', error);
-          }
+        const cwd = await this.findCwdInFile(filePath);
+        if (cwd) {
+          return cwd;
+        } else {
+          console.warn(`No cwd found in JSONL file: ${filePath}`);
         }
       }
     } catch (error) {
       console.error('Failed to get project path:', error);
     }
 
-    // Fallback: decode directory name
-    return path.basename(projectDir).replace(/-/g, '/');
+    // Fallback: Try simple decoding by adding leading slash and replacing hyphens
+    // This will work for most cases but may fail for projects with hyphens in their names
+    const encodedName = path.basename(projectDir);
+    console.warn(`No cwd field found in ${projectDir}, using simple decode fallback`);
+    
+    // Basic decode: add leading slash and replace remaining hyphens with slashes
+    if (encodedName.startsWith('-')) {
+      return '/' + encodedName.substring(1).replace(/-/g, '/');
+    }
+    return encodedName;
   }
 
   private async getSessionIds(projectDir: string): Promise<string[]> {
@@ -115,6 +119,43 @@ export class SessionDiscovery {
       
       rl.on('error', () => {
         resolve(null);
+      });
+    });
+  }
+
+  private findCwdInFile(filePath: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      const stream = createReadStream(filePath);
+      const rl = readline.createInterface({ input: stream });
+      let resolved = false;
+      
+      rl.on('line', (line) => {
+        if (resolved) return;
+        try {
+          const data = JSON.parse(line);
+          if (data.cwd) {
+            resolved = true;
+            rl.close();
+            stream.close();
+            resolve(data.cwd);
+          }
+        } catch {
+          // Continue to next line
+        }
+      });
+      
+      rl.on('close', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      });
+      
+      rl.on('error', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
       });
     });
   }
