@@ -98,7 +98,9 @@ export function setupIpcHandlers(
       }
       
       // Create a new ClaudeSession for the resumed session
-      const session = claudeManager.createSession(name || `Resumed Session ${sessionId.substring(0, 8)}`, projectPath);
+      // Use a better name that doesn't duplicate the session ID
+      const sessionName = name?.includes('Session') ? name : (name || `${sessionId.substring(0, 8)}`);
+      const session = claudeManager.createSession(sessionName, projectPath);
       
       // Set the Claude session ID so resume works properly
       session.claudeSessionId = sessionId;
@@ -112,11 +114,17 @@ export function setupIpcHandlers(
       // Resume the session with the provided session ID
       await session.resume(claudePath, prompt, model, mainWindow);
       
+      // Add the session to the manager BEFORE returning
+      // This ensures it's available when the UI refreshes
+      (claudeManager as any).sessions.set(session.id, session);
+      
       // Save session on complete
       session.on('complete', (result: CompletionData) => {
         console.log('Resumed session complete:', session.id, result);
         sessionStore.saveSession(session);
       });
+      
+      console.log('Resumed session registered with claudeSessionId:', session.claudeSessionId);
       
       return {
         id: session.id,

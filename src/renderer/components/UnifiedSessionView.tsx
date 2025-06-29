@@ -28,6 +28,7 @@ export function UnifiedSessionView({
   const [sessionInfo, setSessionInfo] = useState<ClaudeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isResumingRef = useRef(false);
   
   // Track if we've switched from historical to active
   const [isNowActive, setIsNowActive] = useState(false);
@@ -36,10 +37,13 @@ export function UnifiedSessionView({
 
   // Reset state when sessionId prop changes
   useEffect(() => {
-    setIsNowActive(false);
-    setActiveSessionId(null);
-    setMessages([]);
-    setError(null);
+    // Don't reset messages if we're in the middle of resuming
+    if (!isResumingRef.current) {
+      setIsNowActive(false);
+      setActiveSessionId(null);
+      setMessages([]);
+      setError(null);
+    }
   }, [sessionId]);
 
   useEffect(() => {
@@ -56,8 +60,9 @@ export function UnifiedSessionView({
       unsubscribeMessage = subscribeToMessages();
       unsubscribeError = subscribeToErrors();
       unsubscribeComplete = subscribeToComplete();
-    } else if (isNowActive) {
-      // For resumed sessions, just subscribe (don't reload messages)
+    } else if (isNowActive && activeSessionId) {
+      // For resumed sessions, subscribe to the new active session ID
+      // Don't reload messages since they were already loaded as historical
       unsubscribeMessage = subscribeToMessages();
       unsubscribeError = subscribeToErrors();
       unsubscribeComplete = subscribeToComplete();
@@ -415,132 +420,41 @@ export function UnifiedSessionView({
     try {
       // If this is a historical session that hasn't been resumed yet, resume it
       if (isHistorical && !isNowActive && projectPath) {
+        isResumingRef.current = true;
+        
+        // Add the user message to the UI immediately
+        const userMessage: Message = {
+          type: 'user',
+          message: {
+            content: prompt,
+            role: 'user'
+          },
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, userMessage]);
+        
         const resumedSession = await window.claudeAPI.resumeSession({
           projectPath: projectPath,
           sessionId: sessionId,
-          name: sessionName || `Resumed Session ${sessionId.substring(0, 8)}`,
+          name: sessionName || sessionId.substring(0, 8),
           prompt: prompt,
           model: model
         });
         
         setIsNowActive(true);
-        // Use the resumed session's ID for subscriptions, but don't change activeSessionId
-        // This prevents the UI from resetting
-        const resumedId = resumedSession.id;
-        
-        // Subscribe to messages for the resumed session
-        // We'll override the subscription methods to use the resumed ID
-        let currentTextMessageIndex: number | null = null;
-        let currentThinkingMessageIndex: number | null = null;
-        
-        const unsubscribeMessage = window.claudeAPI.onSessionMessage(resumedId, (message) => {
-          console.log('Received message:', message);
-          
-          // Same message handling logic as subscribeToMessages but using the resumed ID
-          switch (message.type) {
-            case 'user':
-              setMessages(prev => [...prev, message]);
-              setIsLoading(true);
-              currentTextMessageIndex = null;
-              currentThinkingMessageIndex = null;
-              break;
-              
-            case 'text':
-              setMessages(prev => {
-                const newMessages = [...prev];
-                
-                if (currentTextMessageIndex !== null && 
-                    currentTextMessageIndex < newMessages.length && 
-                    newMessages[currentTextMessageIndex].type === 'text' &&
-                    newMessages[currentTextMessageIndex].isStreaming) {
-                  const existingMessage = newMessages[currentTextMessageIndex];
-                  newMessages[currentTextMessageIndex] = {
-                    ...existingMessage,
-                    accumulatedText: (existingMessage.accumulatedText || '') + (message.text || ''),
-                    timestamp: message.timestamp,
-                    isStreaming: message.isStreaming !== false
-                  };
-                } else {
-                  currentTextMessageIndex = newMessages.length;
-                  newMessages.push({
-                    ...message,
-                    accumulatedText: message.text || '',
-                    isStreaming: message.isStreaming !== false
-                  });
-                }
-                
-                return newMessages;
-              });
-              break;
-              
-            case 'thinking':
-              setMessages(prev => {
-                const newMessages = [...prev];
-                
-                if (currentThinkingMessageIndex !== null && 
-                    currentThinkingMessageIndex < newMessages.length && 
-                    newMessages[currentThinkingMessageIndex].type === 'thinking' &&
-                    newMessages[currentThinkingMessageIndex].isStreaming) {
-                  const existingMessage = newMessages[currentThinkingMessageIndex];
-                  newMessages[currentThinkingMessageIndex] = {
-                    ...existingMessage,
-                    accumulatedThinking: (existingMessage.accumulatedThinking || '') + (message.thinking || ''),
-                    timestamp: message.timestamp,
-                    isStreaming: message.isStreaming !== false
-                  };
-                } else {
-                  currentThinkingMessageIndex = newMessages.length;
-                  newMessages.push({
-                    ...message,
-                    accumulatedThinking: message.thinking || '',
-                    isStreaming: message.isStreaming !== false
-                  });
-                }
-                
-                return newMessages;
-              });
-              break;
-              
-            case 'tool_use':
-            case 'tool_result':
-            case 'system':
-            case 'usage':
-            case 'error':
-              if (message.type === 'tool_use' || message.type === 'system') {
-                currentTextMessageIndex = null;
-                currentThinkingMessageIndex = null;
-              }
-              setMessages(prev => {
-                const newMessages = [...prev, message];
-                if (shouldShowMessage(message, newMessages.length - 1, newMessages)) {
-                  return newMessages;
-                }
-                return prev;
-              });
-              break;
-              
-            default:
-              setMessages(prev => [...prev, message]);
-          }
-        });
-        
-        const unsubscribeError = window.claudeAPI.onSessionError(resumedId, (error) => {
-          console.error('Session error:', error);
-          setIsLoading(false);
-        });
-        
-        const unsubscribeComplete = window.claudeAPI.onSessionComplete(resumedId, (result) => {
-          console.log('Session complete:', result);
-          setIsLoading(false);
-          onRefreshSessions();
-        });
-        
         // Store the resumed session ID for future operations
-        setActiveSessionId(resumedId);
+        setActiveSessionId(resumedSession.id);
         
-        // Don't navigate - stay in the same view
-        // Just refresh sessions to update the sidebar
-        onRefreshSessions();
+        // Don't set up subscriptions here - let the useEffect handle it
+        // Wait a bit before refreshing to ensure the session is properly registered
+        setTimeout(() => {
+          onRefreshSessions();
+          // Reset the resuming flag after refresh
+          isResumingRef.current = false;
+        }, 100);
+        
+        // The useEffect will handle subscriptions when isNowActive changes
+        return;
       } else {
         // Continue existing active session
         const currentSessionId = activeSessionId || sessionId;
