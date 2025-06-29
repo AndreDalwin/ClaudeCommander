@@ -2,6 +2,8 @@
 
 > A modern GUI for Claude Code CLI - manage your AI coding sessions with ease
 
+⚠️ **Early Development** - This project is in active development and may have bugs or breaking changes.
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-4.5.4-blue)
 ![React](https://img.shields.io/badge/React-19.1.0-blue)
 ![Electron](https://img.shields.io/badge/Electron-37.1.0-47848F)
@@ -30,8 +32,8 @@ Commander is an Electron-based desktop application that provides a sleek, modern
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/commander-in-chief.git
-cd commander-in-chief
+git clone https://github.com/AndreDalwin/ClaudeCommander.git
+cd ClaudeCommander
 
 # Install dependencies
 npm install
