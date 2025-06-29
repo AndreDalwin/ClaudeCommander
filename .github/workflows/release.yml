@@ -1,0 +1,159 @@
+name: Release Commander App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.15.0'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build Electron app
+      run: npm run make
+      env:
+        CI: true
+    
+    - name: Upload macOS artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-artifacts
+        path: |
+          out/make/zip/darwin/**/*.zip
+          out/make/**/*.dmg
+        retention-days: 1
+
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build Electron app
+      run: npm run make
+      env:
+        CI: true
+    
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-artifacts
+        path: |
+          out/make/**/*.deb
+          out/make/**/*.rpm
+          out/make/**/*.AppImage
+        retention-days: 1
+
+  # build-windows:
+  #   runs-on: windows-latest
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '22.15.0'
+  #       cache: 'npm'
+  #   
+  #   - name: Install dependencies
+  #     run: npm install
+  #     
+  #   - name: Run linting
+  #     run: npm run lint
+  #   
+  #   - name: Build Electron app
+  #     run: npm run make
+  #     env:
+  #       CI: true
+  #   
+  #   - name: Upload Windows artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: windows-artifacts
+  #       path: |
+  #         out/make/**/*.exe
+  #         out/make/**/*.msi
+  #       retention-days: 1
+
+  create-release:
+    needs: [build-macos, build-linux]  # Add build-windows when enabled
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for changelog
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 ${{ github.ref }}^ 2>/dev/null || echo "")
+        
+        # Generate changelog
+        if [ -z "$PREV_TAG" ]; then
+          CHANGELOG="Initial release"
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..${{ github.ref }} | grep -v "^- Merge")
+        fi
+        
+        # Save to file for multi-line support
+        echo "$CHANGELOG" > changelog.txt
+        echo "Generated changelog from ${PREV_TAG:-beginning} to ${{ github.ref }}"
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Commander ${{ github.ref_name }}
+        body_path: changelog.txt
+        draft: false
+        prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        files: |
+          artifacts/**/*.zip
+          artifacts/**/*.dmg
+          artifacts/**/*.deb
+          artifacts/**/*.rpm
+          artifacts/**/*.AppImage
+          artifacts/**/*.exe
+          artifacts/**/*.msi
+        generate_release_notes: true
