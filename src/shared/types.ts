@@ -7,6 +7,7 @@ export interface ClaudeSession {
   messageCount: number;
   claudeSessionId?: string; // The actual Claude session ID
   claudeProjectId?: string; // The Claude project ID
+  resumedFrom?: string; // If resumed, stores the original Claude session ID
 }
 
 // Unified session interface that represents both active and discovered sessions

@@ -104,6 +104,7 @@ export function setupIpcHandlers(
       
       // Set the Claude session ID so resume works properly
       session.claudeSessionId = sessionId;
+      session.resumedFrom = sessionId; // Track that this was resumed
       
       // Get the Claude path properly
       const claudePath = (claudeManager as any).claudePath;
@@ -118,13 +119,16 @@ export function setupIpcHandlers(
       // This ensures it's available when the UI refreshes
       (claudeManager as any).sessions.set(session.id, session);
       
+      // Register the Claude session ID mapping
+      claudeManager.registerClaudeSessionId(session.id, sessionId);
+      
       // Save session on complete
       session.on('complete', (result: CompletionData) => {
         console.log('Resumed session complete:', session.id, result);
         sessionStore.saveSession(session);
       });
       
-      console.log('Resumed session registered with claudeSessionId:', session.claudeSessionId);
+      console.log('Resumed session registered with internal ID:', session.id, 'Claude ID:', session.claudeSessionId);
       
       return {
         id: session.id,
@@ -133,7 +137,8 @@ export function setupIpcHandlers(
         isActive: session.isActive,
         createdAt: session.createdAt,
         messageCount: session.messages.length,
-        claudeSessionId: session.claudeSessionId
+        claudeSessionId: session.claudeSessionId,
+        resumedFrom: session.resumedFrom
       };
     } catch (error) {
       console.error('Failed to resume session:', error);
