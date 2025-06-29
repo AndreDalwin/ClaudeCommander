@@ -15,7 +15,7 @@ export class SessionStore {
   private storageDir: string;
 
   constructor() {
-    this.storageDir = path.join(os.homedir(), '.commander-in-chief', 'sessions');
+    this.storageDir = path.join(os.homedir(), '.claudecommander', 'sessions');
     this.ensureStorageDir();
   }
 
