@@ -41,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: commander-macos-${{ github.sha }}
-        path: out/make/zip/darwin/**/*.app
+        path: out/commander-darwin-*/commander.app
         compression-level: 0  # Faster upload for large .app bundles
         retention-days: 30
     
@@ -52,36 +52,36 @@ jobs:
         path: out/make/zip/darwin/**/*.zip
         retention-days: 30
 
-  build-windows:
-    runs-on: windows-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '22.15.0'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm install
-      
-    - name: Run linting
-      run: npm run lint
-    
-    - name: Build Electron app
-      run: npm run make
-      env:
-        CI: true
-    
-    - name: Upload Windows artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: commander-windows-${{ github.sha }}
-        path: out/make/squirrel.windows/**/*.exe
-        retention-days: 30
+  # build-windows:
+  #   runs-on: windows-latest
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '22.15.0'
+  #       cache: 'npm'
+  #   
+  #   - name: Install dependencies
+  #     run: npm install
+  #     
+  #   - name: Run linting
+  #     run: npm run lint
+  #   
+  #   - name: Build Electron app
+  #     run: npm run make
+  #     env:
+  #       CI: true
+  #   
+  #   - name: Upload Windows artifact
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: commander-windows-${{ github.sha }}
+  #       path: out/make/squirrel.windows/**/*.exe
+  #       retention-days: 30
 
   build-linux:
     runs-on: ubuntu-latest
@@ -111,12 +111,12 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: commander-linux-deb-${{ github.sha }}
-        path: out/make/deb/**/*.deb
+        path: out/make/**/*.deb
         retention-days: 30
     
     - name: Upload Linux .rpm artifact
       uses: actions/upload-artifact@v4
       with:
         name: commander-linux-rpm-${{ github.sha }}
-        path: out/make/rpm/**/*.rpm
+        path: out/make/**/*.rpm
         retention-days: 30
