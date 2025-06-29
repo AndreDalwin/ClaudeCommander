@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Commander in Chief is an Electron-based GUI application that provides a React frontend for interacting with Claude Code CLI sessions. It manages Claude sessions, displays conversation history, and provides tool output visualization.
+Commander is an Electron-based GUI application that provides a React frontend for interacting with Claude Code CLI sessions. It manages Claude sessions, displays conversation history, and provides tool output visualization.
 
 ## Development Commands
 
@@ -137,7 +137,7 @@ Message types are defined in `src/shared/types.ts` as the `Message` interface.
 ### Branding Guidelines
 
 **Brand Identity:**
-- **Name**: Commander in Chief
+- **Name**: Commander
 - **Tagline**: Claude Code Session Management
 - **Logo**: Terminal icon in blue gradient container
 - **Personality**: Professional, modern, developer-focused

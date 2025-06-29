@@ -1,7 +1,7 @@
 {
-  "name": "commander-in-chief",
-  "productName": "commander-in-chief",
-  "version": "1.0.0",
+  "name": "commander",
+  "productName": "commander",
+  "version": "0.1.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {

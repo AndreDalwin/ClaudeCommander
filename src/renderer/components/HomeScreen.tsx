@@ -34,7 +34,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
             </div>
             <div>
               <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                Commander in Chief
+                Commander
               </h1>
               <p className="text-gray-400 text-lg">Claude Code Session Management</p>
             </div>
