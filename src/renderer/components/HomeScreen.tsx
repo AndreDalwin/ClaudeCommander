@@ -9,8 +9,10 @@ import {
   BarChart3,
   Layers,
   Play,
-  Terminal
+  Terminal,
+  Keyboard
 } from 'lucide-react';
+import packageJson from '../../../package.json';
 
 interface HomeScreenProps {
   onNavigate: (view: string) => void;
@@ -24,8 +26,8 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] p-8 relative">
+      <div className="max-w-7xl mx-auto h-full flex flex-col">
         {/* Header Section */}
         <div className="mb-16 text-left">
           <div className="flex items-center gap-4 mb-6">
@@ -65,7 +67,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
         </div>
 
         {/* Main Grid Layout */}
-        <div className="grid grid-cols-12 gap-8">
+        <div className="grid grid-cols-12 gap-8 flex-1">
           {/* Stats Cards */}
           <div className="col-span-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -116,9 +118,12 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
                   <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <Folder className="w-7 h-7 text-white" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">Browse Projects</h3>
-                    <p className="text-blue-100">Explore and manage your projects</p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-white mb-1">Browse Projects</h3>
+                    <p className="text-blue-100 mb-3">Explore and manage your projects</p>
+                    <p className="text-sm text-blue-200/70">
+                      Access all your Claude sessions organized by project. View history, resume conversations, and manage your work.
+                    </p>
                   </div>
                 </div>
               </button>
@@ -131,15 +136,49 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
                   <div className="w-14 h-14 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-white/10 transition-colors">
                     <Plus className="w-7 h-7 text-white" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">New Session</h3>
-                    <p className="text-gray-400">Start a fresh Claude session</p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-white mb-1">New Session</h3>
+                    <p className="text-gray-400 mb-3">Start a fresh Claude session</p>
+                    <p className="text-sm text-gray-500">
+                      Begin a new conversation with Claude. Perfect for starting new projects or exploring ideas.
+                    </p>
                   </div>
                 </div>
               </button>
             </div>
           </div>
 
+          {/* Quick Tips Section */}
+          <div className="col-span-12 mt-8">
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 shadow-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <Keyboard className="w-5 h-5 text-gray-400" />
+                <h3 className="text-lg font-semibold text-white">Quick Tips</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Enter</span>
+                  <span className="text-gray-400">Send message to Claude</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Shift+Enter</span>
+                  <span className="text-gray-400">New line in message</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Esc</span>
+                  <span className="text-gray-400">Cancel current operation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer with version */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-600 text-sm">
+            Commander v{packageJson.version} • Built for developers who love Claude
+          </p>
         </div>
       </div>
     </div>

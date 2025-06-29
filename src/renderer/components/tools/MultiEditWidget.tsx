@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Message } from '@shared/types';
+import { DiffDisplay } from './DiffDisplay';
 
 interface MultiEditWidgetProps {
   tool: Message;
@@ -12,6 +13,7 @@ export function MultiEditWidget({ tool, result }: MultiEditWidgetProps) {
   const fileName = filePath.split('/').pop() || filePath;
   const edits = tool.input?.edits || [];
   const isSuccess = !result?.error;
+  
   
   return (
     <div className="border border-dark-border rounded-lg bg-dark-surface overflow-hidden">
@@ -68,21 +70,16 @@ export function MultiEditWidget({ tool, result }: MultiEditWidgetProps) {
                   <div className="text-xs text-text-secondary">Edit #{index + 1}</div>
                 </div>
                 
-                {/* Removed */}
-                <div className="bg-red-900/20 border-l-4 border-red-500 p-3">
-                  <div className="text-xs text-red-300 mb-1">- Removed</div>
-                  <pre className="text-sm text-red-200 font-mono whitespace-pre-wrap">
-                    {edit.old_string}
-                  </pre>
-                </div>
-                
-                {/* Added */}
-                <div className="bg-green-900/20 border-l-4 border-green-500 p-3">
-                  <div className="text-xs text-green-300 mb-1">+ Added</div>
-                  <pre className="text-sm text-green-200 font-mono whitespace-pre-wrap">
-                    {edit.new_string}
-                  </pre>
-                </div>
+                {edit.old_string && edit.new_string ? (
+                  <DiffDisplay
+                    oldString={edit.old_string}
+                    newString={edit.new_string}
+                  />
+                ) : (
+                  <div className="p-4 text-text-muted text-sm">
+                    No changes to display for this edit
+                  </div>
+                )}
               </div>
             ))}
           </div>
