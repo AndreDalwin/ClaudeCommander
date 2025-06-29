@@ -6,7 +6,7 @@ import { UnifiedSessionView } from './components/UnifiedSessionView';
 import { SessionList } from './components/SessionList';
 import { NewSessionDialog } from './components/NewSessionDialog';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
-import { ArrowLeft, Plus, FolderOpen, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, FolderOpen, MessageSquare, Home } from 'lucide-react';
 
 type ViewState = 'home' | 'projects' | 'project-detail' | 'session';
 
@@ -244,18 +244,18 @@ function App() {
         <div className="p-6 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
           <div className="flex gap-3 mb-4">
             <button 
-              className="flex items-center gap-2 px-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444] flex-1"
-              onClick={() => setCurrentView('projects')}
+              className="p-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white transition-all duration-200 hover:bg-[#333333] hover:border-[#444444]"
+              onClick={() => setCurrentView('home')}
+              title="Home"
             >
-              <FolderOpen className="w-4 h-4" />
-              Projects
+              <Home className="w-4 h-4" />
             </button>
             <button 
               className="flex items-center gap-2 px-3 py-2 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white text-sm transition-all duration-200 hover:bg-[#333333] hover:border-[#444444] flex-1"
-              onClick={() => setCurrentView('home')}
+              onClick={() => setCurrentView('projects')}
             >
               <ArrowLeft className="w-4 h-4" />
-              Home
+              Projects
             </button>
           </div>
           
