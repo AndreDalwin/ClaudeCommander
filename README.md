@@ -32,8 +32,8 @@ Commander is an Electron-based desktop application that provides a sleek, modern
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/commander-in-chief.git
-cd commander-in-chief
+git clone https://github.com/AndreDalwin/ClaudeCommander.git
+cd ClaudeCommander
 
 # Install dependencies
 npm install
