@@ -258,6 +258,14 @@ function App() {
             sessionId={selectedDiscoveredSession.id}
             sessionName={selectedDiscoveredSession.first_message || `Session ${selectedDiscoveredSession.id.substring(0, 8)}`}
             onBack={() => setCurrentView('project-detail')}
+            projectPath={selectedProject.path}
+            onResumeSession={(newSessionId) => {
+              // Navigate to the new active session
+              setActiveSessionId(newSessionId);
+              setCurrentView('session');
+              // Reload sessions to include the new one
+              loadSessions();
+            }}
           />
         ) : null;
       

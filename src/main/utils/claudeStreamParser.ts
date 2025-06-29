@@ -7,6 +7,8 @@ export class ClaudeStreamParser {
   private buffer = '';
   private currentTextMessage = '';
   private messages: Message[] = [];
+  private extractedSessionId: string | null = null;
+  private extractedProjectId: string | null = null;
 
   constructor(sessionId: string, mainWindow: BrowserWindow) {
     this.sessionId = sessionId;
@@ -84,6 +86,16 @@ export class ClaudeStreamParser {
       case 'system':
         // Handle system messages
         console.log('System message:', message);
+        
+        // Extract session ID from init messages
+        if (message.subtype === 'init' && message.session_id) {
+          this.extractedSessionId = message.session_id;
+          if (message.project_id) {
+            this.extractedProjectId = message.project_id;
+          }
+          console.log('Extracted session ID:', this.extractedSessionId, 'Project ID:', this.extractedProjectId);
+        }
+        
         this.mainWindow.webContents.send(`session-message:${this.sessionId}`, timestampedMessage);
         break;
 
@@ -138,5 +150,12 @@ export class ClaudeStreamParser {
 
   getAllMessages(): Message[] {
     return this.messages;
+  }
+
+  getExtractedSessionInfo(): { sessionId: string | null; projectId: string | null } {
+    return {
+      sessionId: this.extractedSessionId,
+      projectId: this.extractedProjectId
+    };
   }
 }

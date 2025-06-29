@@ -71,6 +71,52 @@ export function setupIpcHandlers(
     }
   });
 
+  // Resume a discovered session
+  ipcMain.handle('resume-session', async (_event, { projectPath, sessionId, name, prompt, model }: { 
+    projectPath: string; 
+    sessionId: string; 
+    name: string;
+    prompt: string; 
+    model: string 
+  }) => {
+    console.log('Resuming discovered session:', sessionId, 'in project:', projectPath);
+    try {
+      // Create a new ClaudeSession for the resumed session
+      const session = claudeManager.createSession(name || `Resumed Session ${sessionId.substring(0, 8)}`, projectPath);
+      
+      // Set the Claude session ID so resume works properly
+      session.claudeSessionId = sessionId;
+      
+      // Get the Claude path properly
+      const claudePath = (claudeManager as any).claudePath;
+      if (!claudePath) {
+        throw new Error('Claude binary not initialized');
+      }
+      
+      // Resume the session with the provided session ID
+      await session.resume(claudePath, prompt, model, mainWindow);
+      
+      // Save session on complete
+      session.on('complete', (result: CompletionData) => {
+        console.log('Resumed session complete:', session.id, result);
+        sessionStore.saveSession(session);
+      });
+      
+      return {
+        id: session.id,
+        name: session.name,
+        projectPath: session.projectPath,
+        isActive: session.isActive,
+        createdAt: session.createdAt,
+        messageCount: session.messages.length,
+        claudeSessionId: session.claudeSessionId
+      };
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      throw error;
+    }
+  });
+
   // Get all sessions
   ipcMain.handle('get-sessions', async () => {
     return claudeManager.getAllSessions();

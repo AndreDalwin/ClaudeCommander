@@ -53,9 +53,9 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
               disabled={isLoading || disabled}
               className="pl-4 pr-10 py-2 bg-[#2a2a2a] border border-[#3a3a3a] text-white rounded-lg cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 appearance-none"
             >
-              <option value="opus">Claude 3 Opus</option>
-              <option value="sonnet">Claude 3.5 Sonnet</option>
-              <option value="haiku">Claude 3 Haiku</option>
+              <option value="opus">Claude Opus 4</option>
+              <option value="sonnet">Claude Sonnet 4</option>
+              <option value="haiku">Claude 3.5 Haiku </option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>

@@ -2,19 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { Message } from '@shared/types';
 import { filterMessages } from '../utils/messageFiltering';
-import { ArrowLeft, MessageSquare, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Loader2, AlertCircle, Play } from 'lucide-react';
+import { NewSessionDialog } from './NewSessionDialog';
 
 interface SessionHistoryViewProps {
   projectId: string;
   sessionId: string;
   sessionName?: string;
   onBack: () => void;
+  projectPath?: string;
+  onResumeSession?: (sessionId: string) => void;
 }
 
-export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }: SessionHistoryViewProps) {
+export function SessionHistoryView({ projectId, sessionId, sessionName, onBack, projectPath, onResumeSession }: SessionHistoryViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+  const [resuming, setResuming] = useState(false);
 
   useEffect(() => {
     loadSessionHistory();
@@ -225,18 +230,57 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
     }
   };
 
+  const handleResumeSession = async (sessionData: { name: string; projectPath: string; prompt: string; model: string }) => {
+    try {
+      setResuming(true);
+      // Call the resume-session IPC handler
+      const resumedSession = await window.claudeAPI.resumeSession({
+        projectPath: sessionData.projectPath,
+        sessionId: sessionId,
+        name: sessionData.name,
+        prompt: sessionData.prompt,
+        model: sessionData.model
+      });
+      
+      setShowResumeDialog(false);
+      // Navigate to the new active session
+      if (onResumeSession) {
+        onResumeSession(resumedSession.id);
+      }
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      setError(`Failed to resume session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setResuming(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
       {/* Session Info Header */}
       <div className="px-6 py-4 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-            <MessageSquare className="w-4 h-4 text-blue-400" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Session History</h2>
+              {sessionName && <p className="text-sm text-gray-400 truncate">{sessionName}</p>}
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-white">Session History</h2>
-            {sessionName && <p className="text-sm text-gray-400 truncate">{sessionName}</p>}
-          </div>
+          
+          {/* Resume Session Button */}
+          {projectPath && (
+            <button
+              onClick={() => setShowResumeDialog(true)}
+              disabled={resuming}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50"
+            >
+              <Play className="w-4 h-4" />
+              Resume Session
+            </button>
+          )}
         </div>
       </div>
 
@@ -261,6 +305,18 @@ export function SessionHistoryView({ projectId, sessionId, sessionName, onBack }
           <MessageList messages={messages} />
         )}
       </div>
+
+      {/* Resume Session Dialog */}
+      {showResumeDialog && projectPath && (
+        <NewSessionDialog
+          onClose={() => setShowResumeDialog(false)}
+          onSubmit={handleResumeSession}
+          defaultPath={projectPath}
+          title="Resume Session"
+          submitText={resuming ? "Resuming..." : "Resume"}
+          promptPlaceholder="Continue the conversation..."
+        />
+      )}
     </div>
   );
 }

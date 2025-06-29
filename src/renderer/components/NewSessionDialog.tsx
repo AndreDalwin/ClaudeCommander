@@ -6,9 +6,19 @@ interface NewSessionDialogProps {
   onClose: () => void;
   onSubmit: (data: SessionData) => void;
   defaultPath?: string;
+  title?: string;
+  submitText?: string;
+  promptPlaceholder?: string;
 }
 
-export function NewSessionDialog({ onClose, onSubmit, defaultPath }: NewSessionDialogProps) {
+export function NewSessionDialog({ 
+  onClose, 
+  onSubmit, 
+  defaultPath, 
+  title = "New Claude Session",
+  submitText = "Create Session",
+  promptPlaceholder = "What would you like Claude to help with?"
+}: NewSessionDialogProps) {
   const [formData, setFormData] = useState<SessionData>({
     id: '',
     name: '',
@@ -47,7 +57,7 @@ export function NewSessionDialog({ onClose, onSubmit, defaultPath }: NewSessionD
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
               <Terminal className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-2xl font-semibold text-white">New Claude Session</h2>
+            <h2 className="text-2xl font-semibold text-white">{title}</h2>
           </div>
           <button 
             onClick={onClose}
@@ -95,7 +105,7 @@ export function NewSessionDialog({ onClose, onSubmit, defaultPath }: NewSessionD
             <textarea
               value={formData.prompt}
               onChange={e => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
-              placeholder="What would you like Claude to help with?"
+              placeholder={promptPlaceholder}
               rows={4}
               className="w-full px-4 py-3 bg-[#2a2a2a] border border-[#3a3a3a] text-white rounded-xl resize-vertical focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
             />
@@ -126,7 +136,7 @@ export function NewSessionDialog({ onClose, onSubmit, defaultPath }: NewSessionD
               type="submit"
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg"
             >
-              Create Session
+              {submitText}
             </button>
           </div>
         </form>

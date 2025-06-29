@@ -14,6 +14,8 @@ export class ClaudeSession extends EventEmitter {
   messages: Message[] = [];
   isActive = false;
   createdAt: string;
+  claudeSessionId: string | null = null; // The actual session ID from Claude
+  claudeProjectId: string | null = null; // The project ID from Claude
   private streamParser?: ClaudeStreamParser;
 
   constructor(id: string, name: string, projectPath: string) {
@@ -87,9 +89,17 @@ export class ClaudeSession extends EventEmitter {
       this.isActive = false;
       this.streamParser?.handleComplete(code || 0);
       
-      // Save messages from parser
+      // Save messages from parser and extract session info
       if (this.streamParser) {
         this.messages.push(...this.streamParser.getAllMessages());
+        
+        // Extract Claude session ID
+        const sessionInfo = this.streamParser.getExtractedSessionInfo();
+        if (sessionInfo.sessionId) {
+          this.claudeSessionId = sessionInfo.sessionId;
+          this.claudeProjectId = sessionInfo.projectId;
+          console.log('Stored Claude session ID:', this.claudeSessionId);
+        }
       }
       
       mainWindow.webContents.send(`session-complete:${this.id}`, {
@@ -132,15 +142,20 @@ export class ClaudeSession extends EventEmitter {
       throw new Error('Session already active');
     }
 
+    // Use the Claude session ID if available, otherwise fail
+    if (!this.claudeSessionId) {
+      throw new Error('No Claude session ID available for resuming');
+    }
+
     const args = [
-      '--resume', this.id,
+      '--resume', this.claudeSessionId,
       '-p', prompt,
       '--model', model,
       '--output-format', 'stream-json',
       '--verbose'
     ];
 
-    console.log('Resuming Claude session:', this.id, args);
+    console.log('Resuming Claude session:', this.claudeSessionId, args);
 
     this.process = spawn(claudePath, args, {
       cwd: this.projectPath,
@@ -186,6 +201,14 @@ export class ClaudeSession extends EventEmitter {
       
       if (this.streamParser) {
         this.messages.push(...this.streamParser.getAllMessages());
+        
+        // Extract Claude session ID if we're resuming
+        const sessionInfo = this.streamParser.getExtractedSessionInfo();
+        if (sessionInfo.sessionId) {
+          this.claudeSessionId = sessionInfo.sessionId;
+          this.claudeProjectId = sessionInfo.projectId;
+          console.log('Stored Claude session ID (resume):', this.claudeSessionId);
+        }
       }
       
       mainWindow.webContents.send(`session-complete:${this.id}`, {

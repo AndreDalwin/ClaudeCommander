@@ -5,6 +5,22 @@ export interface ClaudeSession {
   isActive: boolean;
   createdAt: string;
   messageCount: number;
+  claudeSessionId?: string; // The actual Claude session ID
+  claudeProjectId?: string; // The Claude project ID
+}
+
+// Unified session interface that represents both active and discovered sessions
+export interface UnifiedSession {
+  id: string; // Internal ID (for active) or Claude session ID (for discovered)
+  claudeSessionId: string; // The actual Claude session ID
+  name: string;
+  projectPath: string;
+  isActive: boolean;
+  createdAt: string;
+  messageCount: number;
+  source: 'active' | 'discovered'; // Where this session came from
+  firstMessage?: string; // For discovered sessions
+  canResume: boolean; // Whether this session can be resumed
 }
 
 export interface Message {
@@ -90,6 +106,13 @@ export interface ClaudeAPI {
   // Session management
   createSession: (data: SessionData) => Promise<ClaudeSession>;
   continueSession: (data: { sessionId: string; prompt: string; model: string }) => Promise<{ success: boolean }>;
+  resumeSession: (data: { 
+    projectPath: string; 
+    sessionId: string; 
+    name: string;
+    prompt: string; 
+    model: string 
+  }) => Promise<ClaudeSession>;
   getSessions: () => Promise<ClaudeSession[]>;
   getSessionMessages: (sessionId: string) => Promise<Message[]>;
   cancelSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
