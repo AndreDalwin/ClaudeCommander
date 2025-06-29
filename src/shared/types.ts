@@ -5,15 +5,38 @@ export interface ClaudeSession {
   isActive: boolean;
   createdAt: string;
   messageCount: number;
+  claudeSessionId?: string; // The actual Claude session ID
+  claudeProjectId?: string; // The Claude project ID
+  resumedFrom?: string; // If resumed, stores the original Claude session ID
+}
+
+// Unified session interface that represents both active and discovered sessions
+export interface UnifiedSession {
+  id: string; // Internal ID (for active) or Claude session ID (for discovered)
+  claudeSessionId: string; // The actual Claude session ID
+  name: string;
+  projectPath: string;
+  isActive: boolean;
+  createdAt: string;
+  messageCount: number;
+  source: 'active' | 'discovered'; // Where this session came from
+  firstMessage?: string; // For discovered sessions
+  canResume: boolean; // Whether this session can be resumed
 }
 
 export interface Message {
-  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'error' | 'raw';
+  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw' | 'result' | 'assistant';
   timestamp: string;
+  // Meta message indicators
+  isMeta?: boolean;
+  is_error?: boolean;
+  subtype?: string; // For system init messages, etc.
+  leafUuid?: string; // Reference point indicators
+  summary?: string; // Summary content for meta messages
   // User message
   message?: {
     role: 'user' | 'assistant';
-    content: string;
+    content: string | Array<{type: string; text?: string; [key: string]: any}>;
   };
   // Text message from Claude
   text?: string;
@@ -21,10 +44,27 @@ export interface Message {
   // Tool use message
   name?: string;
   input?: any;
+  tool_use_id?: string;
   // Tool result
   output?: any;
+  tool_use_id_result?: string;
+  // Thinking message
+  thinking?: string;
+  accumulatedThinking?: string; // For streaming thinking
+  // System message
+  system?: string;
+  reminder?: boolean;
+  // Usage info
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+  };
   // Error
   error?: string;
+  // Streaming indicator
+  isStreaming?: boolean;
 }
 
 export interface SessionData {
@@ -67,6 +107,13 @@ export interface ClaudeAPI {
   // Session management
   createSession: (data: SessionData) => Promise<ClaudeSession>;
   continueSession: (data: { sessionId: string; prompt: string; model: string }) => Promise<{ success: boolean }>;
+  resumeSession: (data: { 
+    projectPath: string; 
+    sessionId: string; 
+    name: string;
+    prompt: string; 
+    model: string 
+  }) => Promise<ClaudeSession>;
   getSessions: () => Promise<ClaudeSession[]>;
   getSessionMessages: (sessionId: string) => Promise<Message[]>;
   cancelSession: (sessionId: string) => Promise<{ success: boolean; error?: string }>;
@@ -91,5 +138,8 @@ export interface ClaudeAPI {
 declare global {
   interface Window {
     claudeAPI: ClaudeAPI;
+    electronAPI: {
+      openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
+    };
   }
 }

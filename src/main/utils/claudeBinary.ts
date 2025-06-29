@@ -66,8 +66,12 @@ export class ClaudeBinaryFinder {
         dirs.forEach(dir => {
           basePaths.push(path.join(nvmDir, dir, 'bin/claude'));
         });
-      }).catch(() => {});
-    } catch {}
+      }).catch(() => {
+        // Silently ignore errors when reading NVM directories
+      });
+    } catch {
+      // Silently ignore errors when accessing NVM directory
+    }
 
     return basePaths;
   }

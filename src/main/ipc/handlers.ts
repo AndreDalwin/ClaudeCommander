@@ -1,8 +1,8 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
-import { ClaudeManager, ClaudeSession } from '../utils/claudeManager';
+import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
+import { ClaudeManager } from '../utils/claudeManager';
 import { SessionStore } from '../utils/sessionStore';
 import { SessionDiscovery } from '../utils/sessionDiscovery';
-import { SessionData, Message, ErrorData, CompletionData } from '@shared/types';
+import { SessionData, CompletionData } from '@shared/types';
 
 export function setupIpcHandlers(
   mainWindow: BrowserWindow,
@@ -71,6 +71,81 @@ export function setupIpcHandlers(
     }
   });
 
+  // Resume a discovered session
+  ipcMain.handle('resume-session', async (_event, { projectPath, sessionId, name, prompt, model }: { 
+    projectPath: string; 
+    sessionId: string; 
+    name: string;
+    prompt: string; 
+    model: string 
+  }) => {
+    console.log('Resuming discovered session:', sessionId, 'in project:', projectPath);
+    try {
+      // Check if this session is already active
+      const existingSession = claudeManager.getSessionByClaudeId(sessionId);
+      if (existingSession) {
+        // Session already active, just continue it
+        await claudeManager.continueSession(existingSession.id, prompt, model, mainWindow);
+        return {
+          id: existingSession.id,
+          name: existingSession.name,
+          projectPath: existingSession.projectPath,
+          isActive: existingSession.isActive,
+          createdAt: existingSession.createdAt,
+          messageCount: existingSession.messages.length,
+          claudeSessionId: existingSession.claudeSessionId
+        };
+      }
+      
+      // Create a new ClaudeSession for the resumed session
+      // Use a better name that doesn't duplicate the session ID
+      const sessionName = name?.includes('Session') ? name : (name || `${sessionId.substring(0, 8)}`);
+      const session = claudeManager.createSession(sessionName, projectPath);
+      
+      // Set the Claude session ID so resume works properly
+      session.claudeSessionId = sessionId;
+      session.resumedFrom = sessionId; // Track that this was resumed
+      
+      // Get the Claude path properly
+      const claudePath = (claudeManager as any).claudePath;
+      if (!claudePath) {
+        throw new Error('Claude binary not initialized');
+      }
+      
+      // Resume the session with the provided session ID
+      await session.resume(claudePath, prompt, model, mainWindow);
+      
+      // Add the session to the manager BEFORE returning
+      // This ensures it's available when the UI refreshes
+      (claudeManager as any).sessions.set(session.id, session);
+      
+      // Register the Claude session ID mapping
+      claudeManager.registerClaudeSessionId(session.id, sessionId);
+      
+      // Save session on complete
+      session.on('complete', (result: CompletionData) => {
+        console.log('Resumed session complete:', session.id, result);
+        sessionStore.saveSession(session);
+      });
+      
+      console.log('Resumed session registered with internal ID:', session.id, 'Claude ID:', session.claudeSessionId);
+      
+      return {
+        id: session.id,
+        name: session.name,
+        projectPath: session.projectPath,
+        isActive: session.isActive,
+        createdAt: session.createdAt,
+        messageCount: session.messages.length,
+        claudeSessionId: session.claudeSessionId,
+        resumedFrom: session.resumedFrom
+      };
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      throw error;
+    }
+  });
+
   // Get all sessions
   ipcMain.handle('get-sessions', async () => {
     return claudeManager.getAllSessions();
@@ -133,6 +208,18 @@ export function setupIpcHandlers(
     } catch (error) {
       console.error('Failed to load session history:', error);
       throw error;
+    }
+  });
+
+  // Open external links
+  ipcMain.handle('open-external', async (_event, url: string) => {
+    console.log('Opening external URL:', url);
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to open external URL:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });
 }

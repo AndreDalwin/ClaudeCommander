@@ -5,6 +5,7 @@ const claudeAPI: ClaudeAPI = {
   // Session management
   createSession: (data) => ipcRenderer.invoke('create-session', data),
   continueSession: (data) => ipcRenderer.invoke('continue-session', data),
+  resumeSession: (data) => ipcRenderer.invoke('resume-session', data),
   getSessions: () => ipcRenderer.invoke('get-sessions'),
   getSessionMessages: (sessionId) => ipcRenderer.invoke('get-session-messages', sessionId),
   cancelSession: (sessionId) => ipcRenderer.invoke('cancel-session', sessionId),
@@ -44,3 +45,8 @@ const claudeAPI: ClaudeAPI = {
 };
 
 contextBridge.exposeInMainWorld('claudeAPI', claudeAPI);
+
+// Expose additional Electron APIs
+contextBridge.exposeInMainWorld('electronAPI', {
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url)
+});

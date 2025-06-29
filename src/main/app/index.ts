@@ -24,7 +24,7 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    title: 'Commander in Chief',
+    title: 'Commander',
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       contextIsolation: true,
@@ -32,13 +32,7 @@ const createWindow = (): void => {
     },
   });
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  // Open the DevTools in development
-  if (process.env.NODE_ENV !== 'production') {
-    mainWindow.webContents.openDevTools();
-  }
+  // Window loading is now done after IPC handlers are set up
 };
 
 // This method will be called when Electron has finished
@@ -59,16 +53,22 @@ app.whenReady().then(async () => {
   }
 
   createWindow();
+  
+  // Set up IPC handlers BEFORE loading the window content
   setupIpcHandlers(mainWindow, claudeManager, sessionStore, claudeStatus);
+  
+  // Load the window content AFTER handlers are set up
+  mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  
+  // Open the DevTools in development
+  if (process.env.NODE_ENV !== 'production') {
+    mainWindow.webContents.openDevTools();
+  }
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed on all platforms
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on('activate', () => {
