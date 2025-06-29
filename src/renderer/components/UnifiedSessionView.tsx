@@ -34,21 +34,40 @@ export function UnifiedSessionView({
   // Track the active session ID when resumed
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
+  // Reset state when sessionId prop changes
   useEffect(() => {
-    if (isHistorical && projectId && !isNowActive) {
-      loadHistoricalMessages();
-    } else {
-      loadActiveMessages();
-      const unsubscribeMessage = subscribeToMessages();
-      const unsubscribeError = subscribeToErrors();
-      const unsubscribeComplete = subscribeToComplete();
+    setIsNowActive(false);
+    setActiveSessionId(null);
+    setMessages([]);
+    setError(null);
+  }, [sessionId]);
 
-      return () => {
-        unsubscribeMessage();
-        unsubscribeError();
-        unsubscribeComplete();
-      };
+  useEffect(() => {
+    let unsubscribeMessage: (() => void) | undefined;
+    let unsubscribeError: (() => void) | undefined;
+    let unsubscribeComplete: (() => void) | undefined;
+
+    if (isHistorical && projectId && !isNowActive) {
+      // Load historical messages
+      loadHistoricalMessages();
+    } else if (!isHistorical) {
+      // For active sessions only (not historical), load and subscribe
+      loadActiveMessages();
+      unsubscribeMessage = subscribeToMessages();
+      unsubscribeError = subscribeToErrors();
+      unsubscribeComplete = subscribeToComplete();
+    } else if (isNowActive) {
+      // For resumed sessions, just subscribe (don't reload messages)
+      unsubscribeMessage = subscribeToMessages();
+      unsubscribeError = subscribeToErrors();
+      unsubscribeComplete = subscribeToComplete();
     }
+
+    return () => {
+      unsubscribeMessage?.();
+      unsubscribeError?.();
+      unsubscribeComplete?.();
+    };
   }, [sessionId, isHistorical, projectId, isNowActive, activeSessionId]);
 
   useEffect(() => {
@@ -397,6 +416,14 @@ export function UnifiedSessionView({
         
         setIsNowActive(true);
         setActiveSessionId(resumedSession.id);
+        
+        // Subscribe to messages for the new session
+        const unsubscribeMessage = subscribeToMessages();
+        const unsubscribeError = subscribeToErrors();
+        const unsubscribeComplete = subscribeToComplete();
+        
+        // Store cleanup functions for later
+        // They will be cleaned up by the effect when component unmounts or sessionId changes
         
         // Don't navigate - stay in the same view
         // Just refresh sessions to update the sidebar
