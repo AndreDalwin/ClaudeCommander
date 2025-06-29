@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { DiscoveredProject, DiscoveredSession } from '@shared/types';
-import { ArrowLeft, Plus, MessageSquare, Loader2, Calendar } from 'lucide-react';
+import { DiscoveredProject, DiscoveredSession, ClaudeSession } from '@shared/types';
+import { ArrowLeft, Plus, MessageSquare, Loader2, Calendar, Activity } from 'lucide-react';
 
 interface ProjectDetailViewProps {
   project: DiscoveredProject;
   onSelectSession: (session: DiscoveredSession) => void;
+  onSelectActiveSession?: (sessionId: string) => void;
   onBack: () => void;
   onNewSession: () => void;
 }
 
-export function ProjectDetailView({ project, onSelectSession, onBack, onNewSession }: ProjectDetailViewProps) {
+export function ProjectDetailView({ project, onSelectSession, onSelectActiveSession, onBack, onNewSession }: ProjectDetailViewProps) {
   const [sessions, setSessions] = useState<DiscoveredSession[]>([]);
+  const [activeSessions, setActiveSessions] = useState<ClaudeSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,8 +22,17 @@ export function ProjectDetailView({ project, onSelectSession, onBack, onNewSessi
   const loadSessions = async () => {
     try {
       setLoading(true);
+      
+      // Load discovered sessions
       const discoveredSessions = await window.claudeAPI.getDiscoveredSessions(project.id);
       setSessions(discoveredSessions);
+      
+      // Load all active sessions and filter for this project
+      const allSessions = await window.claudeAPI.getSessions();
+      const projectActiveSessions = allSessions.filter(s => 
+        s.isActive && s.projectPath === project.path
+      );
+      setActiveSessions(projectActiveSessions);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     } finally {
@@ -85,11 +96,11 @@ export function ProjectDetailView({ project, onSelectSession, onBack, onNewSessi
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-8">
             <div className="mb-8">
-              <h3 className="text-2xl font-semibold text-white">Sessions ({sessions.length})</h3>
-              <p className="text-gray-400">Browse session history for this project</p>
+              <h3 className="text-2xl font-semibold text-white">Sessions ({sessions.length + activeSessions.length})</h3>
+              <p className="text-gray-400">Browse active and historical sessions for this project</p>
             </div>
             
-            {sessions.length === 0 ? (
+            {sessions.length === 0 && activeSessions.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-20 h-20 bg-gray-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <MessageSquare className="w-10 h-10 text-gray-500" />
@@ -105,32 +116,90 @@ export function ProjectDetailView({ project, onSelectSession, onBack, onNewSessi
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {sessions.map(session => (
-                  <div 
-                    key={session.id}
-                    className="group bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-[#202020] hover:border-[#3a3a3a] hover:scale-[1.01]"
-                    onClick={() => onSelectSession(session)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                        <MessageSquare className="w-6 h-6 text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white mb-2 leading-relaxed">
-                          {truncateMessage(session.first_message)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
-                          <span className="font-mono bg-[#2a2a2a] px-2 py-1 rounded">{session.id.substring(0, 8)}...</span>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>{formatDate(session.created_at)}</span>
+              <div className="space-y-6">
+                {/* Active Sessions */}
+                {activeSessions.length > 0 && (
+                  <>
+                    <div>
+                      <h4 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-emerald-400" />
+                        Active Sessions
+                      </h4>
+                      <div className="space-y-4">
+                        {activeSessions.map(session => (
+                          <div 
+                            key={session.id}
+                            className="group bg-[#1a1a1a] border border-emerald-500/30 rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-[#202020] hover:border-emerald-500/50 hover:scale-[1.01]"
+                            onClick={() => onSelectActiveSession?.(session.id)}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                                <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h5 className="text-lg font-semibold text-white truncate">{session.name}</h5>
+                                  <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-lg text-xs font-medium">
+                                    Active
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-400">
+                                  <span className="font-mono bg-[#2a2a2a] px-2 py-1 rounded">
+                                    {session.claudeSessionId ? session.claudeSessionId.substring(0, 8) : session.id.substring(0, 8)}...
+                                  </span>
+                                  <span>{session.messageCount} messages</span>
+                                  <span>Started {new Date(session.createdAt).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
                     </div>
+                    
+                    {/* Divider */}
+                    {sessions.length > 0 && (
+                      <div className="border-t border-[#2a2a2a] my-6"></div>
+                    )}
+                  </>
+                )}
+                
+                {/* Historical Sessions */}
+                {sessions.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-blue-400" />
+                      Session History
+                    </h4>
+                    <div className="space-y-4">
+                      {sessions.map(session => (
+                        <div 
+                          key={session.id}
+                          className="group bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 cursor-pointer transition-all duration-200 hover:bg-[#202020] hover:border-[#3a3a3a] hover:scale-[1.01]"
+                          onClick={() => onSelectSession(session)}
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                              <MessageSquare className="w-6 h-6 text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white mb-2 leading-relaxed">
+                                {truncateMessage(session.first_message)}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-400">
+                                <span className="font-mono bg-[#2a2a2a] px-2 py-1 rounded">{session.id.substring(0, 8)}...</span>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  <span>{formatDate(session.created_at)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

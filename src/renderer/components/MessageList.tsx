@@ -303,6 +303,81 @@ export function MessageList({ messages }: MessageListProps) {
       );
     }
 
+    // Handle assistant messages (raw format from streaming)
+    if (message.type === 'assistant' && message.message) {
+      // Extract content from assistant messages that weren't parsed by the stream parser
+      const assistantContent: JSX.Element[] = [];
+      
+      if (message.message.content && Array.isArray(message.message.content)) {
+        message.message.content.forEach((content: any, contentIndex: number) => {
+          if (content.type === 'text' && content.text) {
+            assistantContent.push(
+              <div key={`text-${contentIndex}`} className="leading-relaxed whitespace-pre-wrap text-white">
+                {content.text}
+              </div>
+            );
+          } else if (content.type === 'tool_use') {
+            // Create a proper tool use message
+            const toolMessage: Message = {
+              type: 'tool_use',
+              name: content.name,
+              input: content.input,
+              tool_use_id: content.id,
+              timestamp: message.timestamp
+            };
+            assistantContent.push(
+              <div key={`tool-${contentIndex}`} className="my-2">
+                {renderToolWidget(toolMessage)}
+              </div>
+            );
+          } else if (content.type === 'thinking' && content.thinking) {
+            const isExpanded = expandedThinking.has(index);
+            assistantContent.push(
+              <div key={`thinking-${contentIndex}`} className="my-2 p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a]">
+                <div 
+                  className="flex items-center justify-between cursor-pointer hover:bg-[#2a2a2a] p-2 rounded-lg transition-colors"
+                  onClick={() => toggleThinking(index)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-gray-300">Claude is thinking...</span>
+                  </div>
+                  <ChevronDown 
+                    className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                  />
+                </div>
+                {isExpanded && (
+                  <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
+                    <div className="text-sm text-gray-300 whitespace-pre-wrap bg-[#0f0f0f] p-3 rounded-lg font-mono">
+                      {content.thinking}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }
+        });
+      }
+      
+      if (assistantContent.length > 0) {
+        // Check if previous message is from user for spacing
+        const prevMessage = index > 0 ? filteredMessages[index - 1] : null;
+        const isAfterUser = prevMessage?.type === 'user';
+        
+        return (
+          <div key={index} className={`flex justify-start animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+            <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
+              <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
+                <Bot className="w-3 h-3 text-blue-400" />
+                Claude
+              </div>
+              {assistantContent}
+            </div>
+          </div>
+        );
+      }
+    }
+    
     // Handle raw/unknown messages
     // Check if previous message is from user for spacing
     const prevMessage = index > 0 ? filteredMessages[index - 1] : null;

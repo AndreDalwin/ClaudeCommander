@@ -67,7 +67,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
         {/* Main Grid Layout */}
         <div className="grid grid-cols-12 gap-8">
           {/* Stats Cards */}
-          <div className="col-span-12 lg:col-span-8">
+          <div className="col-span-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-[#3a3a3a]">
                 <div className="flex items-center gap-4">
@@ -140,43 +140,6 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
             </div>
           </div>
 
-          {/* Quick Actions Sidebar */}
-          <div className="col-span-12 lg:col-span-4">
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Quick Actions
-              </h3>
-              
-              <div className="space-y-4">
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl hover:bg-[#252525] hover:border-[#3a3a3a] transition-all duration-200 text-left"
-                  onClick={() => onNavigate('active-sessions')}
-                >
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                    <Play className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Active Sessions</div>
-                    <div className="text-sm text-gray-400">View running sessions</div>
-                  </div>
-                </button>
-                
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl hover:bg-[#252525] hover:border-[#3a3a3a] transition-all duration-200 text-left"
-                  onClick={() => onNavigate('recent')}
-                >
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Recent Sessions</div>
-                    <div className="text-sm text-gray-400">Browse session history</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

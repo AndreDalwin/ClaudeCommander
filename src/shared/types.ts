@@ -24,7 +24,7 @@ export interface UnifiedSession {
 }
 
 export interface Message {
-  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw' | 'result';
+  type: 'user' | 'text' | 'tool_use' | 'tool_result' | 'thinking' | 'system' | 'usage' | 'error' | 'raw' | 'result' | 'assistant';
   timestamp: string;
   // Meta message indicators
   isMeta?: boolean;
