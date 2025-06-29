@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Message } from '@shared/types';
+import { DiffDisplay } from './DiffDisplay';
 
 interface EditWidgetProps {
   tool: Message;
@@ -11,6 +12,7 @@ export function EditWidget({ tool, result }: EditWidgetProps) {
   const filePath = tool.input?.file_path || 'Unknown file';
   const fileName = filePath.split('/').pop() || filePath;
   const isSuccess = !result?.error;
+  
   
   return (
     <div className="border border-dark-border rounded-lg bg-dark-surface overflow-hidden">
@@ -59,23 +61,14 @@ export function EditWidget({ tool, result }: EditWidgetProps) {
           <div className="space-y-2">
             <div className="text-sm font-medium text-text-primary">Changes:</div>
             <div className="bg-dark-bg rounded-lg border border-dark-border overflow-hidden">
-              {/* Removed Lines */}
-              {tool.input?.old_string && (
-                <div className="bg-red-900/20 border-l-4 border-red-500 p-3">
-                  <div className="text-xs text-red-300 mb-1">- Removed</div>
-                  <pre className="text-sm text-red-200 font-mono whitespace-pre-wrap">
-                    {tool.input.old_string}
-                  </pre>
-                </div>
-              )}
-              
-              {/* Added Lines */}
-              {tool.input?.new_string && (
-                <div className="bg-green-900/20 border-l-4 border-green-500 p-3">
-                  <div className="text-xs text-green-300 mb-1">+ Added</div>
-                  <pre className="text-sm text-green-200 font-mono whitespace-pre-wrap">
-                    {tool.input.new_string}
-                  </pre>
+              {tool.input?.old_string && tool.input?.new_string ? (
+                <DiffDisplay
+                  oldString={tool.input.old_string}
+                  newString={tool.input.new_string}
+                />
+              ) : (
+                <div className="p-4 text-text-muted text-sm">
+                  No changes to display
                 </div>
               )}
             </div>
