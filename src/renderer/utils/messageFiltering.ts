@@ -7,13 +7,21 @@ const TOOLS_WITH_WIDGETS = [
   'Bash', // Handle both cases
   'websearch',
   'read',
+  'Read', // Handle both cases
   'write',
+  'Write',
   'ls',
+  'LS',
   'grep',
+  'Grep',
   'glob',
+  'Glob',
   'todowrite',
+  'TodoWrite',
   'task',
+  'Task',
   'multiedit',
+  'MultiEdit',
   // Add more tools as widgets are created
 ] as const;
 

@@ -375,10 +375,13 @@ export function UnifiedSessionView({
           }
           // Only add message if it should be shown
           setMessages(prev => {
-            const newMessages = [...prev, message];
+            // For tool_result, we need to check if we already have the messages in prev
+            const checkMessages = message.type === 'tool_result' ? prev : [...prev, message];
+            const checkIndex = message.type === 'tool_result' ? prev.length : prev.length;
+            
             // Check if this message should be shown based on filtering rules
-            if (shouldShowMessage(message, newMessages.length - 1, newMessages)) {
-              return newMessages;
+            if (shouldShowMessage(message, checkIndex, checkMessages)) {
+              return [...prev, message];
             }
             // Don't add the message if it should be filtered
             return prev;

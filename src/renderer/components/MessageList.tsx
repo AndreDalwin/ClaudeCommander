@@ -122,31 +122,29 @@ export function MessageList({ messages }: MessageListProps) {
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
-          <div className="p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
-            <div 
-              className="flex items-center justify-between cursor-pointer hover:bg-[#2a2a2a] p-2 rounded-lg transition-colors"
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-4' : 'mb-2'}`}>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+            <Brain className="w-3 h-3 text-purple-400" />
+            <button
+              className="text-xs text-purple-300 hover:text-purple-200 transition-colors"
               onClick={() => toggleThinking(index)}
             >
-              <div className="flex items-center gap-2">
-                <Brain className="w-4 h-4 text-purple-400" />
-                <span className="text-sm text-gray-300">Claude is thinking...</span>
-                {message.isStreaming && (
-                  <span className="inline-block w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-                )}
-              </div>
-              <ChevronDown 
-                className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-              />
-            </div>
-            {isExpanded && (
-              <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-                <div className="text-sm text-gray-300 whitespace-pre-wrap break-words bg-[#0f0f0f] p-3 rounded-lg font-mono overflow-x-auto">
-                  {thinkingContent}
-                </div>
-              </div>
+              Claude is thinking{isExpanded ? ' (click to hide)' : '...'}
+            </button>
+            {message.isStreaming && (
+              <span className="inline-block w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
             )}
+            <ChevronDown 
+              className={`w-3 h-3 text-purple-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            />
           </div>
+          {isExpanded && (
+            <div className="mt-2 ml-2">
+              <div className="text-xs text-gray-400 whitespace-pre-wrap break-words bg-[#0f0f0f]/50 p-2 rounded-lg font-mono overflow-x-auto border border-[#2a2a2a]">
+                {thinkingContent}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -333,22 +331,22 @@ export function MessageList({ messages }: MessageListProps) {
           } else if (content.type === 'thinking' && content.thinking) {
             const isExpanded = expandedThinking.has(index);
             assistantContent.push(
-              <div key={`thinking-${contentIndex}`} className="my-2 p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a]">
-                <div 
-                  className="flex items-center justify-between cursor-pointer hover:bg-[#2a2a2a] p-2 rounded-lg transition-colors"
-                  onClick={() => toggleThinking(index)}
-                >
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm text-gray-300">Claude is thinking...</span>
-                  </div>
+              <div key={`thinking-${contentIndex}`} className="my-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20">
+                  <Brain className="w-3 h-3 text-purple-400" />
+                  <button
+                    className="text-xs text-purple-300 hover:text-purple-200 transition-colors"
+                    onClick={() => toggleThinking(index)}
+                  >
+                    Claude is thinking{isExpanded ? ' (click to hide)' : '...'}
+                  </button>
                   <ChevronDown 
-                    className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    className={`w-3 h-3 text-purple-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                   />
                 </div>
                 {isExpanded && (
-                  <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-                    <div className="text-sm text-gray-300 whitespace-pre-wrap break-words bg-[#0f0f0f] p-3 rounded-lg font-mono overflow-x-auto">
+                  <div className="mt-2 ml-2">
+                    <div className="text-xs text-gray-400 whitespace-pre-wrap break-words bg-[#0f0f0f]/50 p-2 rounded-lg font-mono overflow-x-auto border border-[#2a2a2a]">
                       {content.thinking}
                     </div>
                   </div>
