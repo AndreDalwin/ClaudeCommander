@@ -43,7 +43,7 @@ export function ToolWidget({ message, result, allMessages, messageIndex }: ToolW
         return <WriteWidget tool={message} result={result} />;
       case 'TodoWrite':
         return <TodoWriteWidget tool={message} result={result} />;
-      case 'WebSearch':
+      case 'WebSearch': {
         console.log('WebSearch tool message:', message);
         
         // Special handling for WebSearch - the result might be filtered out
@@ -77,6 +77,7 @@ export function ToolWidget({ message, result, allMessages, messageIndex }: ToolW
         }
         
         return <WebSearchWidget input={message.input} result={webSearchResult} isLoading={!webSearchResult} />;
+      }
       default:
         return <GenericToolWidget tool={message} result={result} />;
     }

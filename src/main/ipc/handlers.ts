@@ -1,8 +1,8 @@
 import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
-import { ClaudeManager, ClaudeSession } from '../utils/claudeManager';
+import { ClaudeManager } from '../utils/claudeManager';
 import { SessionStore } from '../utils/sessionStore';
 import { SessionDiscovery } from '../utils/sessionDiscovery';
-import { SessionData, Message, ErrorData, CompletionData } from '@shared/types';
+import { SessionData, CompletionData } from '@shared/types';
 
 export function setupIpcHandlers(
   mainWindow: BrowserWindow,
