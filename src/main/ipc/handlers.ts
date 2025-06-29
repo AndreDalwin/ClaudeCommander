@@ -81,6 +81,22 @@ export function setupIpcHandlers(
   }) => {
     console.log('Resuming discovered session:', sessionId, 'in project:', projectPath);
     try {
+      // Check if this session is already active
+      const existingSession = claudeManager.getSessionByClaudeId(sessionId);
+      if (existingSession) {
+        // Session already active, just continue it
+        await claudeManager.continueSession(existingSession.id, prompt, model, mainWindow);
+        return {
+          id: existingSession.id,
+          name: existingSession.name,
+          projectPath: existingSession.projectPath,
+          isActive: existingSession.isActive,
+          createdAt: existingSession.createdAt,
+          messageCount: existingSession.messages.length,
+          claudeSessionId: existingSession.claudeSessionId
+        };
+      }
+      
       // Create a new ClaudeSession for the resumed session
       const session = claudeManager.createSession(name || `Resumed Session ${sessionId.substring(0, 8)}`, projectPath);
       

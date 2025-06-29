@@ -6,16 +6,16 @@ import { UnifiedSessionView } from './components/UnifiedSessionView';
 import { SessionList } from './components/SessionList';
 import { NewSessionDialog } from './components/NewSessionDialog';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
-import { ArrowLeft, Plus, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Plus, FolderOpen, MessageSquare } from 'lucide-react';
 
-type ViewState = 'home' | 'projects' | 'project-detail' | 'session' | 'session-history';
+type ViewState = 'home' | 'projects' | 'project-detail' | 'session';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
   const [sessions, setSessions] = useState<ClaudeSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<DiscoveredProject | null>(null);
-  const [selectedDiscoveredSession, setSelectedDiscoveredSession] = useState<DiscoveredSession | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [selectedSessionType, setSelectedSessionType] = useState<'active' | 'historical' | null>(null);
   const [showNewSession, setShowNewSession] = useState(false);
   const [claudeStatus, setClaudeStatus] = useState<{ connected: boolean; version: string; path: string } | null>(null);
   const [discoveredProjects, setDiscoveredProjects] = useState<DiscoveredProject[]>([]);
@@ -28,9 +28,9 @@ function App() {
     loadDiscoveredProjects();
   }, []);
 
-  // Load discovered sessions for current project when in session-history view
+  // Load discovered sessions for current project when in session view
   useEffect(() => {
-    if (currentView === 'session-history' && selectedProject) {
+    if (currentView === 'session' && selectedProject) {
       const loadProjectSessions = async () => {
         try {
           const sessions = await window.claudeAPI.getDiscoveredSessions(selectedProject.id);
@@ -81,7 +81,21 @@ function App() {
       const newSession = await window.claudeAPI.createSession(sessionData);
       console.log('Session created:', newSession);
       await loadSessions();
-      setActiveSessionId(newSession.id);
+      
+      // Find or create project for this session
+      const projectPath = newSession.projectPath;
+      let project = discoveredProjects.find(p => p.path === projectPath);
+      if (!project) {
+        await loadDiscoveredProjects();
+        project = discoveredProjects.find(p => p.path === projectPath);
+      }
+      
+      if (project) {
+        setSelectedProject(project);
+      }
+      
+      setSelectedSessionId(newSession.id);
+      setSelectedSessionType('active');
       setShowNewSession(false);
       setCurrentView('session');
     } catch (error) {
@@ -112,8 +126,9 @@ function App() {
   };
 
   const handleSelectDiscoveredSession = async (session: DiscoveredSession) => {
-    setSelectedDiscoveredSession(session);
-    setCurrentView('session-history');
+    setSelectedSessionId(session.id);
+    setSelectedSessionType('historical');
+    setCurrentView('session');
   };
 
   const stats = {
@@ -148,7 +163,8 @@ function App() {
             project={selectedProject}
             onSelectSession={handleSelectDiscoveredSession}
             onSelectActiveSession={(sessionId) => {
-              setActiveSessionId(sessionId);
+              setSelectedSessionId(sessionId);
+              setSelectedSessionType('active');
               setCurrentView('session');
             }}
             onBack={() => setCurrentView('projects')}
@@ -159,36 +175,39 @@ function App() {
           />
         ) : null;
       
-      case 'session':
-        return activeSessionId ? (
+      case 'session': {
+        if (!selectedSessionId || !selectedProject) {
+          return (
+            <div className="flex-1 flex flex-col items-center justify-center text-text-muted">
+              <h2 className="text-2xl font-normal mb-4">No session selected</h2>
+              <button 
+                className="px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light"
+                onClick={() => setCurrentView('home')}
+              >
+                Back to Home
+              </button>
+            </div>
+          );
+        }
+        
+        // Find session details
+        const activeSession = sessions.find(s => s.id === selectedSessionId);
+        const discoveredSession = projectDiscoveredSessions.find(s => s.id === selectedSessionId);
+        const sessionName = activeSession?.name || 
+                           discoveredSession?.first_message || 
+                           `Session ${selectedSessionId.substring(0, 8)}`;
+        
+        return (
           <UnifiedSessionView 
-            sessionId={activeSessionId}
+            sessionId={selectedSessionId}
             onRefreshSessions={loadSessions}
-            isHistorical={false}
-          />
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-text-muted">
-            <h2 className="text-2xl font-normal mb-4">No session selected</h2>
-            <button 
-              className="px-6 py-3 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light"
-              onClick={() => setCurrentView('home')}
-            >
-              Back to Home
-            </button>
-          </div>
-        );
-      
-      case 'session-history':
-        return selectedDiscoveredSession && selectedProject ? (
-          <UnifiedSessionView
-            sessionId={selectedDiscoveredSession.id}
-            onRefreshSessions={loadSessions}
-            isHistorical={true}
+            isHistorical={selectedSessionType === 'historical'}
             projectId={selectedProject.id}
-            sessionName={selectedDiscoveredSession.first_message || `Session ${selectedDiscoveredSession.id.substring(0, 8)}`}
+            sessionName={sessionName}
             projectPath={selectedProject.path}
           />
-        ) : null;
+        );
+      }
       
       default:
         return null;
@@ -221,7 +240,7 @@ function App() {
           <button 
             className="w-full flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium transition-all duration-200 hover:from-blue-600 hover:to-purple-600 shadow-lg"
             onClick={() => {
-              if (currentView === 'session-history' && selectedProject) {
+              if (selectedProject) {
                 setNewSessionPath(selectedProject.path);
               }
               setShowNewSession(true);
@@ -234,107 +253,100 @@ function App() {
 
         {/* Sessions List */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {currentView === 'session-history' ? (
-            <>
-              {/* Project Sessions */}
-              <div className="p-4 border-b border-[#2a2a2a]">
-                <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">
-                  {selectedProject ? `${selectedProject.path.split('/').pop()} Sessions` : 'Project Sessions'}
-                </h3>
-              </div>
+          {/* Project Sessions */}
+          <div className="p-4 border-b border-[#2a2a2a]">
+            <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">
+              {selectedProject ? `${selectedProject.path.split('/').pop()} Sessions` : 'Project Sessions'}
+            </h3>
+          </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {/* Active Sessions for this project */}
-                {sessions.filter(s => s.isActive && selectedProject && s.projectPath === selectedProject.path).map((session) => (
+                {/* All Sessions - Active and Historical unified */}
+                {(() => {
+                  // Get active sessions for this project
+                  const activeSessions = sessions.filter(s => s.isActive && selectedProject && s.projectPath === selectedProject.path);
+                  
+                  // Create a Set of Claude session IDs that are already active
+                  const activeClaudeSessionIds = new Set(
+                    activeSessions
+                      .filter(s => s.claudeSessionId)
+                      .map(s => s.claudeSessionId)
+                  );
+                  
+                  // Filter out historical sessions that are already active
+                  const filteredHistoricalSessions = projectDiscoveredSessions.filter(
+                    session => !activeClaudeSessionIds.has(session.id)
+                  );
+                  
+                  return [
+                    // Active sessions first
+                    ...activeSessions.map(session => ({
+                      id: session.id,
+                      name: session.name,
+                      subtitle: `${session.messageCount} messages`,
+                      isActive: true,
+                      type: 'active' as const
+                    })),
+                    // Then historical sessions (excluding those that are already active)
+                    ...filteredHistoricalSessions.map(session => ({
+                      id: session.id,
+                      name: session.first_message || `Session ${session.id.substring(0, 8)}`,
+                      subtitle: new Date(session.created_at * 1000).toLocaleDateString(),
+                      isActive: false,
+                      type: 'historical' as const
+                    }))
+                  ];
+                })().map((session) => (
                   <div
                     key={session.id}
                     className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                      activeSessionId === session.id
-                        ? 'bg-[#2a2a2a] border-emerald-500/50 shadow-lg' 
-                        : 'bg-[#1a1a1a] border-emerald-500/30 hover:bg-[#2a2a2a] hover:border-emerald-500/50'
+                      selectedSessionId === session.id
+                        ? 'bg-[#2a2a2a] border-blue-500/50 shadow-lg' 
+                        : 'bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#2a2a2a] hover:border-[#3a3a3a]'
                     }`}
                     onClick={() => {
-                      setActiveSessionId(session.id);
-                      setCurrentView('session');
+                      setSelectedSessionId(session.id);
+                      setSelectedSessionType(session.type);
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/20">
-                        <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/20">
+                        <MessageSquare className="w-4 h-4 text-blue-400" />
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <div className="text-sm text-white truncate">{session.name}</div>
-                          <span className="bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded text-xs font-medium">
-                            Active
-                          </span>
+                          {session.isActive && (
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Active session" />
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {session.messageCount} messages
+                          {session.subtitle}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
                 
-                {/* Historical Sessions */}
-                {projectDiscoveredSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                      selectedDiscoveredSession?.id === session.id
-                        ? 'bg-[#2a2a2a] border-blue-500/50 shadow-lg' 
-                        : 'bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#2a2a2a] hover:border-[#3a3a3a]'
-                    }`}
-                    onClick={() => {
-                      setSelectedDiscoveredSession(session);
-                      setCurrentView('session-history');
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/20">
-                        <div className="w-3 h-3 text-blue-400">📜</div>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-white mb-1 truncate">
-                          {session.first_message || `Session ${session.id.substring(0, 8)}`}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(session.created_at * 1000).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {projectDiscoveredSessions.length === 0 && (
+                {(() => {
+                  const activeSessions = sessions.filter(s => s.isActive && selectedProject && s.projectPath === selectedProject.path);
+                  const activeClaudeSessionIds = new Set(
+                    activeSessions
+                      .filter(s => s.claudeSessionId)
+                      .map(s => s.claudeSessionId)
+                  );
+                  const filteredHistoricalSessions = projectDiscoveredSessions.filter(
+                    session => !activeClaudeSessionIds.has(session.id)
+                  );
+                  
+                  return activeSessions.length === 0 && filteredHistoricalSessions.length === 0;
+                })() && (
                   <div className="text-center py-8 text-gray-500 text-sm">
                     No sessions found
                   </div>
                 )}
               </div>
-              
-            </>
-          ) : (
-            <>
-              <div className="p-4 border-b border-[#2a2a2a]">
-                <h3 className="text-sm font-medium text-gray-300 uppercase tracking-wide">All Sessions</h3>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto">
-                <SessionList 
-                  sessions={sessions}
-                  activeSessionId={activeSessionId}
-                  onSelectSession={(sessionId) => {
-                    setActiveSessionId(sessionId);
-                    setCurrentView('session');
-                  }}
-                />
-              </div>
-            </>
-          )}
         </div>
       </aside>
     );
@@ -342,7 +354,7 @@ function App() {
 
   return (
     <div className="flex h-screen bg-dark-bg text-text-primary custom-scrollbar">
-      {(currentView === 'session' || currentView === 'session-history') ? (
+      {(currentView === 'session') ? (
         <>
           {renderSidebar()}
           {/* Main Content Area */}

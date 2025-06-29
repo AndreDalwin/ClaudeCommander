@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { Message, ClaudeSession } from '@shared/types';
-import { filterMessages } from '../utils/messageFiltering';
+import { filterMessages, shouldShowMessage } from '../utils/messageFiltering';
 import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 
 interface UnifiedSessionViewProps {
@@ -368,7 +368,16 @@ export function UnifiedSessionView({
             currentTextMessageIndex = null;
             currentThinkingMessageIndex = null;
           }
-          setMessages(prev => [...prev, message]);
+          // Only add message if it should be shown
+          setMessages(prev => {
+            const newMessages = [...prev, message];
+            // Check if this message should be shown based on filtering rules
+            if (shouldShowMessage(message, newMessages.length - 1, newMessages)) {
+              return newMessages;
+            }
+            // Don't add the message if it should be filtered
+            return prev;
+          });
           break;
           
         default:
@@ -415,15 +424,119 @@ export function UnifiedSessionView({
         });
         
         setIsNowActive(true);
-        setActiveSessionId(resumedSession.id);
+        // Use the resumed session's ID for subscriptions, but don't change activeSessionId
+        // This prevents the UI from resetting
+        const resumedId = resumedSession.id;
         
-        // Subscribe to messages for the new session
-        const unsubscribeMessage = subscribeToMessages();
-        const unsubscribeError = subscribeToErrors();
-        const unsubscribeComplete = subscribeToComplete();
+        // Subscribe to messages for the resumed session
+        // We'll override the subscription methods to use the resumed ID
+        let currentTextMessageIndex: number | null = null;
+        let currentThinkingMessageIndex: number | null = null;
         
-        // Store cleanup functions for later
-        // They will be cleaned up by the effect when component unmounts or sessionId changes
+        const unsubscribeMessage = window.claudeAPI.onSessionMessage(resumedId, (message) => {
+          console.log('Received message:', message);
+          
+          // Same message handling logic as subscribeToMessages but using the resumed ID
+          switch (message.type) {
+            case 'user':
+              setMessages(prev => [...prev, message]);
+              setIsLoading(true);
+              currentTextMessageIndex = null;
+              currentThinkingMessageIndex = null;
+              break;
+              
+            case 'text':
+              setMessages(prev => {
+                const newMessages = [...prev];
+                
+                if (currentTextMessageIndex !== null && 
+                    currentTextMessageIndex < newMessages.length && 
+                    newMessages[currentTextMessageIndex].type === 'text' &&
+                    newMessages[currentTextMessageIndex].isStreaming) {
+                  const existingMessage = newMessages[currentTextMessageIndex];
+                  newMessages[currentTextMessageIndex] = {
+                    ...existingMessage,
+                    accumulatedText: (existingMessage.accumulatedText || '') + (message.text || ''),
+                    timestamp: message.timestamp,
+                    isStreaming: message.isStreaming !== false
+                  };
+                } else {
+                  currentTextMessageIndex = newMessages.length;
+                  newMessages.push({
+                    ...message,
+                    accumulatedText: message.text || '',
+                    isStreaming: message.isStreaming !== false
+                  });
+                }
+                
+                return newMessages;
+              });
+              break;
+              
+            case 'thinking':
+              setMessages(prev => {
+                const newMessages = [...prev];
+                
+                if (currentThinkingMessageIndex !== null && 
+                    currentThinkingMessageIndex < newMessages.length && 
+                    newMessages[currentThinkingMessageIndex].type === 'thinking' &&
+                    newMessages[currentThinkingMessageIndex].isStreaming) {
+                  const existingMessage = newMessages[currentThinkingMessageIndex];
+                  newMessages[currentThinkingMessageIndex] = {
+                    ...existingMessage,
+                    accumulatedThinking: (existingMessage.accumulatedThinking || '') + (message.thinking || ''),
+                    timestamp: message.timestamp,
+                    isStreaming: message.isStreaming !== false
+                  };
+                } else {
+                  currentThinkingMessageIndex = newMessages.length;
+                  newMessages.push({
+                    ...message,
+                    accumulatedThinking: message.thinking || '',
+                    isStreaming: message.isStreaming !== false
+                  });
+                }
+                
+                return newMessages;
+              });
+              break;
+              
+            case 'tool_use':
+            case 'tool_result':
+            case 'system':
+            case 'usage':
+            case 'error':
+              if (message.type === 'tool_use' || message.type === 'system') {
+                currentTextMessageIndex = null;
+                currentThinkingMessageIndex = null;
+              }
+              setMessages(prev => {
+                const newMessages = [...prev, message];
+                if (shouldShowMessage(message, newMessages.length - 1, newMessages)) {
+                  return newMessages;
+                }
+                return prev;
+              });
+              break;
+              
+            default:
+              setMessages(prev => [...prev, message]);
+          }
+        });
+        
+        const unsubscribeError = window.claudeAPI.onSessionError(resumedId, (error) => {
+          console.error('Session error:', error);
+          setIsLoading(false);
+        });
+        
+        const unsubscribeComplete = window.claudeAPI.onSessionComplete(resumedId, (result) => {
+          console.log('Session complete:', result);
+          setIsLoading(false);
+          onRefreshSessions();
+        });
+        
+        // Store the resumed session ID for future operations
+        setActiveSessionId(resumedId);
         
         // Don't navigate - stay in the same view
         // Just refresh sessions to update the sidebar
@@ -453,25 +566,6 @@ export function UnifiedSessionView({
 
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
-      {/* Session Info Header (only for historical sessions) */}
-      {isHistorical && (
-        <div className="px-6 py-4 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-white">
-                  {isNowActive ? 'Active Session' : 'Session History'}
-                </h2>
-                {sessionName && <p className="text-sm text-gray-400 truncate">{sessionName}</p>}
-              </div>
-            </div>
-            
-          </div>
-        </div>
-      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">

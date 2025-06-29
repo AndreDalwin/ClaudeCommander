@@ -265,6 +265,15 @@ export class ClaudeManager {
     return this.sessions.get(id);
   }
 
+  getSessionByClaudeId(claudeSessionId: string): ClaudeSession | undefined {
+    for (const session of this.sessions.values()) {
+      if (session.claudeSessionId === claudeSessionId) {
+        return session;
+      }
+    }
+    return undefined;
+  }
+
   getAllSessions(): Array<{
     id: string;
     name: string;
@@ -272,6 +281,7 @@ export class ClaudeManager {
     isActive: boolean;
     createdAt: string;
     messageCount: number;
+    claudeSessionId?: string;
   }> {
     return Array.from(this.sessions.values()).map(session => ({
       id: session.id,
@@ -279,7 +289,8 @@ export class ClaudeManager {
       projectPath: session.projectPath,
       isActive: session.isActive,
       createdAt: session.createdAt,
-      messageCount: session.messages.length
+      messageCount: session.messages.length,
+      claudeSessionId: session.claudeSessionId || undefined
     }));
   }
 
