@@ -5,10 +5,11 @@ import { ChevronDown, User, Bot, Brain, CheckCircle, XCircle, Info, AlertTriangl
 
 interface MessageListProps {
   messages: Message[];
+  unfilteredMessages?: Message[];
 }
 
 
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({ messages, unfilteredMessages }: MessageListProps) {
   const [expandedThinking, setExpandedThinking] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const accumulatedTexts = useRef<Map<number, string>>(new Map());
@@ -32,8 +33,19 @@ export function MessageList({ messages }: MessageListProps) {
     setExpandedThinking(newExpanded);
   };
 
-  const renderToolWidget = (message: Message, result?: Message) => {
-    return <ToolWidget message={message} result={result} />;
+  const renderToolWidget = (message: Message, result?: Message, index?: number) => {
+    // Use unfiltered messages if available so we can find tool_results that might be filtered out
+    const messagesForLookup = unfilteredMessages || filteredMessages;
+    const messageIndexInUnfiltered = unfilteredMessages ? 
+      unfilteredMessages.findIndex(m => m.tool_use_id === message.tool_use_id && m.timestamp === message.timestamp) : 
+      index;
+    
+    return <ToolWidget 
+      message={message} 
+      result={result} 
+      allMessages={messagesForLookup} 
+      messageIndex={messageIndexInUnfiltered !== -1 ? messageIndexInUnfiltered : index} 
+    />;
   };
 
   const renderMessage = (message: Message, index: number) => {
@@ -165,7 +177,7 @@ export function MessageList({ messages }: MessageListProps) {
 
       return (
         <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
-          {renderToolWidget(message, result)}
+          {renderToolWidget(message, result, index)}
         </div>
       );
     }

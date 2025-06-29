@@ -24,6 +24,7 @@ export function UnifiedSessionView({
   projectPath
 }: UnifiedSessionViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [unfilteredMessages, setUnfilteredMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<ClaudeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +260,8 @@ export function UnifiedSessionView({
         }
       }
       
+      // Store both filtered and unfiltered messages
+      setUnfilteredMessages(convertedMessages);
       // Apply comprehensive filtering to the converted messages
       const filteredMessages = filterMessages(convertedMessages);
       setMessages(filteredMessages);
@@ -273,6 +276,7 @@ export function UnifiedSessionView({
   const loadActiveMessages = async () => {
     const currentSessionId = activeSessionId || sessionId;
     const sessionMessages = await window.claudeAPI.getSessionMessages(currentSessionId);
+    setUnfilteredMessages(sessionMessages);
     setMessages(sessionMessages);
     
     // Get session info from the sessions list
@@ -293,6 +297,7 @@ export function UnifiedSessionView({
       switch (message.type) {
         case 'user':
           // Add user message
+          setUnfilteredMessages(prev => [...prev, message]);
           setMessages(prev => [...prev, message]);
           setIsLoading(true);
           currentTextMessageIndex = null;
@@ -301,6 +306,35 @@ export function UnifiedSessionView({
           
         case 'text':
           // Handle streaming text with accumulation
+          setUnfilteredMessages(prev => {
+            const newMessages = [...prev];
+            
+            // Check if we're continuing a stream or starting a new one
+            if (currentTextMessageIndex !== null && 
+                currentTextMessageIndex < newMessages.length && 
+                newMessages[currentTextMessageIndex].type === 'text' &&
+                newMessages[currentTextMessageIndex].isStreaming) {
+              // Update existing streaming message
+              const existingMessage = newMessages[currentTextMessageIndex];
+              newMessages[currentTextMessageIndex] = {
+                ...existingMessage,
+                accumulatedText: (existingMessage.accumulatedText || '') + (message.text || ''),
+                timestamp: message.timestamp,
+                isStreaming: message.isStreaming !== false
+              };
+            } else {
+              // Start new text message
+              currentTextMessageIndex = newMessages.length;
+              newMessages.push({
+                ...message,
+                accumulatedText: message.text || '',
+                isStreaming: message.isStreaming !== false
+              });
+            }
+            
+            return newMessages;
+          });
+          
           setMessages(prev => {
             const newMessages = [...prev];
             
@@ -333,6 +367,35 @@ export function UnifiedSessionView({
           
         case 'thinking':
           // Handle streaming thinking with accumulation
+          setUnfilteredMessages(prev => {
+            const newMessages = [...prev];
+            
+            // Check if we're continuing a stream or starting a new one
+            if (currentThinkingMessageIndex !== null && 
+                currentThinkingMessageIndex < newMessages.length && 
+                newMessages[currentThinkingMessageIndex].type === 'thinking' &&
+                newMessages[currentThinkingMessageIndex].isStreaming) {
+              // Update existing streaming message
+              const existingMessage = newMessages[currentThinkingMessageIndex];
+              newMessages[currentThinkingMessageIndex] = {
+                ...existingMessage,
+                accumulatedThinking: (existingMessage.accumulatedThinking || '') + (message.thinking || ''),
+                timestamp: message.timestamp,
+                isStreaming: message.isStreaming !== false
+              };
+            } else {
+              // Start new thinking message
+              currentThinkingMessageIndex = newMessages.length;
+              newMessages.push({
+                ...message,
+                accumulatedThinking: message.thinking || '',
+                isStreaming: message.isStreaming !== false
+              });
+            }
+            
+            return newMessages;
+          });
+          
           setMessages(prev => {
             const newMessages = [...prev];
             
@@ -373,6 +436,9 @@ export function UnifiedSessionView({
             currentTextMessageIndex = null;
             currentThinkingMessageIndex = null;
           }
+          // Always add to unfiltered messages
+          setUnfilteredMessages(prev => [...prev, message]);
+          
           // Only add message if it should be shown
           setMessages(prev => {
             // For tool_result, we need to check if we already have the messages in prev
@@ -389,6 +455,7 @@ export function UnifiedSessionView({
           break;
           
         default:
+          setUnfilteredMessages(prev => [...prev, message]);
           setMessages(prev => [...prev, message]);
       }
     });
@@ -502,7 +569,7 @@ export function UnifiedSessionView({
             <div className="text-gray-400">No messages in this session</div>
           </div>
         ) : (
-          <MessageList messages={messages} />
+          <MessageList messages={messages} unfilteredMessages={unfilteredMessages} />
         )}
         <div ref={messagesEndRef} />
       </div>
