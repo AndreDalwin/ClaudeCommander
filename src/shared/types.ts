@@ -138,5 +138,8 @@ export interface ClaudeAPI {
 declare global {
   interface Window {
     claudeAPI: ClaudeAPI;
+    electronAPI: {
+      openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
+    };
   }
 }

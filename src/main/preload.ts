@@ -45,3 +45,8 @@ const claudeAPI: ClaudeAPI = {
 };
 
 contextBridge.exposeInMainWorld('claudeAPI', claudeAPI);
+
+// Expose additional Electron APIs
+contextBridge.exposeInMainWorld('electronAPI', {
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url)
+});

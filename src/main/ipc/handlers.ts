@@ -1,4 +1,4 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
 import { ClaudeManager, ClaudeSession } from '../utils/claudeManager';
 import { SessionStore } from '../utils/sessionStore';
 import { SessionDiscovery } from '../utils/sessionDiscovery';
@@ -208,6 +208,18 @@ export function setupIpcHandlers(
     } catch (error) {
       console.error('Failed to load session history:', error);
       throw error;
+    }
+  });
+
+  // Open external links
+  ipcMain.handle('open-external', async (_event, url: string) => {
+    console.log('Opening external URL:', url);
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to open external URL:', error);
+      return { success: false, error: error.message };
     }
   });
 }
