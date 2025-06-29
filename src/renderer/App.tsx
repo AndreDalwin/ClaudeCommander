@@ -120,9 +120,32 @@ function App() {
     }
   };
 
-  const handleSelectProject = (project: DiscoveredProject) => {
+  const handleSelectProject = async (project: DiscoveredProject) => {
     setSelectedProject(project);
-    setCurrentView('project-detail');
+    
+    // Load sessions for this project
+    try {
+      const projectSessions = await window.claudeAPI.getDiscoveredSessions(project.id);
+      setProjectDiscoveredSessions(projectSessions);
+      
+      // Find the latest session (sessions are typically ordered by creation time)
+      if (projectSessions.length > 0) {
+        // Get the most recent session
+        const latestSession = projectSessions.reduce((latest, current) => {
+          return current.created_at > latest.created_at ? current : latest;
+        }, projectSessions[0]);
+        
+        setSelectedSessionId(latestSession.id);
+        setSelectedSessionType('historical');
+        setCurrentView('session');
+      } else {
+        // If no sessions, still go to project detail view
+        setCurrentView('project-detail');
+      }
+    } catch (error) {
+      console.error('Failed to load project sessions:', error);
+      setCurrentView('project-detail');
+    }
   };
 
   const handleSelectDiscoveredSession = async (session: DiscoveredSession) => {

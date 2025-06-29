@@ -24,7 +24,7 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    title: 'Commander',
+    title: 'Claude Commander',
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       contextIsolation: true,
