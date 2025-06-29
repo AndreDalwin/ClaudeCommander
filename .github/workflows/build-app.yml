@@ -1,0 +1,122 @@
+name: Build Commander App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.15.0'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build Electron app
+      run: npm run make
+      env:
+        # Add these secrets in your GitHub repository settings if you want code signing
+        # APPLE_ID: ${{ secrets.APPLE_ID }}
+        # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # CSC_LINK: ${{ secrets.CSC_LINK }}
+        # CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        CI: true
+    
+    - name: Upload macOS .app artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: commander-macos-${{ github.sha }}
+        path: out/make/zip/darwin/**/*.app
+        compression-level: 0  # Faster upload for large .app bundles
+        retention-days: 30
+    
+    - name: Upload macOS .zip artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: commander-macos-zip-${{ github.sha }}
+        path: out/make/zip/darwin/**/*.zip
+        retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.15.0'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build Electron app
+      run: npm run make
+      env:
+        CI: true
+    
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: commander-windows-${{ github.sha }}
+        path: out/make/squirrel.windows/**/*.exe
+        retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build Electron app
+      run: npm run make
+      env:
+        CI: true
+    
+    - name: Upload Linux .deb artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: commander-linux-deb-${{ github.sha }}
+        path: out/make/deb/**/*.deb
+        retention-days: 30
+    
+    - name: Upload Linux .rpm artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: commander-linux-rpm-${{ github.sha }}
+        path: out/make/rpm/**/*.rpm
+        retention-days: 30
