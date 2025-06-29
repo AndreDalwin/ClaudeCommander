@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Square, ChevronDown } from 'lucide-react';
 
 interface PromptInputProps {
@@ -11,12 +11,17 @@ interface PromptInputProps {
 export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('opus');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim() && !isLoading && !disabled) {
       onSubmit(prompt, model);
       setPrompt('');
+      // Reset textarea height after submit
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '46px';
+      }
     }
   };
 
@@ -27,61 +32,74 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
     }
   };
 
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+    
+    // Auto-resize textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+  };
+
+  // Reset height when prompt is cleared
+  useEffect(() => {
+    if (!prompt && textareaRef.current) {
+      textareaRef.current.style.height = '46px';
+    }
+  }, [prompt]);
+
   return (
-    <form className="border-t border-[#2a2a2a] bg-[#1a1a1a] p-6" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-4">
+    <form className="border-t border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3" onSubmit={handleSubmit}>
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
+          className="flex-1 min-h-[46px] max-h-[140px] px-3 py-3 bg-[#2a2a2a] border border-[#3a3a3a] text-white rounded-lg resize-none overflow-y-auto focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 placeholder-gray-400 transition-all duration-200 leading-5"
+          value={prompt}
+          onChange={handleInput}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message..."
+          disabled={isLoading || disabled}
+          rows={1}
+          style={{ height: '46px' }}
+        />
+        
         <div className="relative">
-          <textarea
-            className="w-full p-4 bg-[#2a2a2a] border border-[#3a3a3a] text-white rounded-xl resize-vertical focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 placeholder-gray-400 pr-16"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your prompt here... (Shift+Enter for new line)"
+          <select 
+            value={model} 
+            onChange={(e) => setModel(e.target.value)}
             disabled={isLoading || disabled}
-            rows={3}
-          />
-          <div className="absolute right-3 bottom-3 text-xs text-gray-500">
-            ⏎ Send • ⇧⏎ New line
-          </div>
+            className="pl-3 pr-8 py-2 h-[46px] bg-[#2a2a2a] border border-[#3a3a3a] text-white text-sm rounded-lg cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 appearance-none"
+            title="Select model"
+          >
+            <option value="opus">Opus</option>
+            <option value="sonnet">Sonnet</option>
+          </select>
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
         </div>
         
-        <div className="flex gap-3 justify-between items-center">
-          <div className="relative">
-            <select 
-              value={model} 
-              onChange={(e) => setModel(e.target.value)}
-              disabled={isLoading || disabled}
-              className="pl-4 pr-10 py-2 bg-[#2a2a2a] border border-[#3a3a3a] text-white rounded-lg cursor-pointer focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 appearance-none"
-            >
-              <option value="opus">Claude Opus 4</option>
-              <option value="sonnet">Claude Sonnet 4</option>
-              <option value="haiku">Claude 3.5 Haiku </option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-          
-          <div className="flex gap-3">
-            {isLoading ? (
-              <button 
-                type="button" 
-                onClick={onCancel}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Square className="w-4 h-4" />
-                Cancel
-              </button>
-            ) : (
-              <button 
-                type="submit" 
-                disabled={!prompt.trim() || disabled}
-                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg"
-              >
-                <Send className="w-4 h-4" />
-                Send
-              </button>
-            )}
-          </div>
-        </div>
+        {isLoading ? (
+          <button 
+            type="button" 
+            onClick={onCancel}
+            className="p-2 h-[46px] w-[46px] flex items-center justify-center bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            title="Cancel"
+          >
+            <Square className="w-4 h-4" />
+          </button>
+        ) : (
+          <button 
+            type="submit" 
+            disabled={!prompt.trim() || disabled}
+            className={`p-2 h-[46px] w-[46px] flex items-center justify-center rounded-lg transition-all ${
+              prompt.trim() 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-[#2a2a2a] text-gray-500 cursor-not-allowed'
+            }`}
+            title="Send message (Enter)"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </form>
   );
