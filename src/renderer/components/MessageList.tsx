@@ -54,12 +54,12 @@ export function MessageList({ messages }: MessageListProps) {
       
       return (
         <div key={index} className="flex justify-end mb-6 animate-fade-in-up">
-          <div className="max-w-[80%] p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg">
+          <div className="max-w-[80%] p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg overflow-hidden">
             <div className="flex items-center gap-2 text-xs font-semibold mb-2 opacity-90">
               <User className="w-3 h-3" />
               You
             </div>
-            <div className="leading-relaxed whitespace-pre-wrap">{content}</div>
+            <div className="leading-relaxed whitespace-pre-wrap break-words">{content}</div>
           </div>
         </div>
       );
@@ -85,7 +85,7 @@ export function MessageList({ messages }: MessageListProps) {
       
       return (
         <div key={index} className={`flex justify-start animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
-          <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
+          <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg overflow-hidden">
             <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
               <Bot className="w-3 h-3 text-blue-400" />
               Claude
@@ -93,7 +93,7 @@ export function MessageList({ messages }: MessageListProps) {
                 <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
               )}
             </div>
-            <div className="leading-relaxed whitespace-pre-wrap text-white">
+            <div className="leading-relaxed whitespace-pre-wrap break-words text-white">
               {textContent}
             </div>
           </div>
@@ -141,7 +141,7 @@ export function MessageList({ messages }: MessageListProps) {
             </div>
             {isExpanded && (
               <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-                <div className="text-sm text-gray-300 whitespace-pre-wrap bg-[#0f0f0f] p-3 rounded-lg font-mono">
+                <div className="text-sm text-gray-300 whitespace-pre-wrap break-words bg-[#0f0f0f] p-3 rounded-lg font-mono overflow-x-auto">
                   {thinkingContent}
                 </div>
               </div>
@@ -185,7 +185,7 @@ export function MessageList({ messages }: MessageListProps) {
               <CheckCircle className="w-4 h-4 text-emerald-400" />
               <span className="text-sm font-semibold text-emerald-400">Task Complete</span>
             </div>
-            <div className="text-sm text-gray-300 whitespace-pre-wrap">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap break-words">
               {message.text || message.summary || 'Task completed successfully'}
             </div>
           </div>
@@ -214,7 +214,7 @@ export function MessageList({ messages }: MessageListProps) {
                 {isError ? 'Tool Error' : 'Tool Result'}
               </span>
             </div>
-            <div className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-[#0f0f0f] p-3 rounded-lg">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap break-words font-mono bg-[#0f0f0f] p-3 rounded-lg overflow-x-auto">
               {typeof message.output === 'string' ? message.output : JSON.stringify(message.output, null, 2)}
             </div>
           </div>
@@ -254,7 +254,7 @@ export function MessageList({ messages }: MessageListProps) {
                 {isReminder ? 'System Reminder' : isInit ? 'Session Started' : 'System Message'}
               </span>
             </div>
-            <div className="text-sm text-gray-300 whitespace-pre-wrap">
+            <div className="text-sm text-gray-300 whitespace-pre-wrap break-words">
               {message.system}
             </div>
           </div>
@@ -297,7 +297,7 @@ export function MessageList({ messages }: MessageListProps) {
               <XCircle className="w-4 h-4" />
               Error
             </div>
-            <div className="text-sm whitespace-pre-wrap text-gray-300 bg-[#0f0f0f] p-3 rounded-lg font-mono">{message.error}</div>
+            <div className="text-sm whitespace-pre-wrap break-words text-gray-300 bg-[#0f0f0f] p-3 rounded-lg font-mono overflow-x-auto">{message.error}</div>
           </div>
         </div>
       );
@@ -312,7 +312,7 @@ export function MessageList({ messages }: MessageListProps) {
         message.message.content.forEach((content: any, contentIndex: number) => {
           if (content.type === 'text' && content.text) {
             assistantContent.push(
-              <div key={`text-${contentIndex}`} className="leading-relaxed whitespace-pre-wrap text-white">
+              <div key={`text-${contentIndex}`} className="leading-relaxed whitespace-pre-wrap break-words text-white">
                 {content.text}
               </div>
             );
@@ -348,7 +348,7 @@ export function MessageList({ messages }: MessageListProps) {
                 </div>
                 {isExpanded && (
                   <div className="mt-3 pt-3 border-t border-[#2a2a2a]">
-                    <div className="text-sm text-gray-300 whitespace-pre-wrap bg-[#0f0f0f] p-3 rounded-lg font-mono">
+                    <div className="text-sm text-gray-300 whitespace-pre-wrap break-words bg-[#0f0f0f] p-3 rounded-lg font-mono overflow-x-auto">
                       {content.thinking}
                     </div>
                   </div>
@@ -397,7 +397,7 @@ export function MessageList({ messages }: MessageListProps) {
   };
 
   return (
-    <div className="flex flex-col py-6 px-6 space-y-2">
+    <div className="flex flex-col py-6 px-6 space-y-2 max-w-full">
       {filteredMessages.map((message, index) => renderMessage(message, index))}
       <div ref={messagesEndRef} />
     </div>

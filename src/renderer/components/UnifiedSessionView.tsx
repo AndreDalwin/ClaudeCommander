@@ -21,8 +21,7 @@ export function UnifiedSessionView({
   isHistorical = false,
   projectId,
   sessionName,
-  projectPath,
-  onResumeSession
+  projectPath
 }: UnifiedSessionViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,9 +31,11 @@ export function UnifiedSessionView({
   
   // Track if we've switched from historical to active
   const [isNowActive, setIsNowActive] = useState(false);
+  // Track the active session ID when resumed
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isHistorical && projectId) {
+    if (isHistorical && projectId && !isNowActive) {
       loadHistoricalMessages();
     } else {
       loadActiveMessages();
@@ -48,7 +49,7 @@ export function UnifiedSessionView({
         unsubscribeComplete();
       };
     }
-  }, [sessionId, isHistorical, projectId]);
+  }, [sessionId, isHistorical, projectId, isNowActive, activeSessionId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -246,21 +247,23 @@ export function UnifiedSessionView({
   };
 
   const loadActiveMessages = async () => {
-    const sessionMessages = await window.claudeAPI.getSessionMessages(sessionId);
+    const currentSessionId = activeSessionId || sessionId;
+    const sessionMessages = await window.claudeAPI.getSessionMessages(currentSessionId);
     setMessages(sessionMessages);
     
     // Get session info from the sessions list
     const sessions = await window.claudeAPI.getSessions();
-    const info = sessions.find(s => s.id === sessionId);
+    const info = sessions.find(s => s.id === currentSessionId);
     setSessionInfo(info || null);
   };
 
   const subscribeToMessages = () => {
-    console.log('Subscribing to messages for session:', sessionId);
+    const currentSessionId = activeSessionId || sessionId;
+    console.log('Subscribing to messages for session:', currentSessionId);
     let currentTextMessageIndex: number | null = null;
     let currentThinkingMessageIndex: number | null = null;
     
-    return window.claudeAPI.onSessionMessage(sessionId, (message) => {
+    return window.claudeAPI.onSessionMessage(currentSessionId, (message) => {
       console.log('Received message:', message);
       
       switch (message.type) {
@@ -356,16 +359,18 @@ export function UnifiedSessionView({
   };
 
   const subscribeToErrors = () => {
-    console.log('Subscribing to errors for session:', sessionId);
-    return window.claudeAPI.onSessionError(sessionId, (error) => {
+    const currentSessionId = activeSessionId || sessionId;
+    console.log('Subscribing to errors for session:', currentSessionId);
+    return window.claudeAPI.onSessionError(currentSessionId, (error) => {
       console.error('Session error:', error);
       setIsLoading(false);
     });
   };
 
   const subscribeToComplete = () => {
-    console.log('Subscribing to complete for session:', sessionId);
-    return window.claudeAPI.onSessionComplete(sessionId, (result) => {
+    const currentSessionId = activeSessionId || sessionId;
+    console.log('Subscribing to complete for session:', currentSessionId);
+    return window.claudeAPI.onSessionComplete(currentSessionId, (result) => {
       console.log('Session complete:', result);
       setIsLoading(false);
       onRefreshSessions();
@@ -391,20 +396,16 @@ export function UnifiedSessionView({
         });
         
         setIsNowActive(true);
+        setActiveSessionId(resumedSession.id);
         
-        // Switch to active mode and start listening to messages
-        const unsubscribeMessage = subscribeToMessages();
-        const unsubscribeError = subscribeToErrors();
-        const unsubscribeComplete = subscribeToComplete();
-        
-        // Navigate to the new active session if callback provided
-        if (onResumeSession) {
-          onResumeSession(resumedSession.id);
-        }
+        // Don't navigate - stay in the same view
+        // Just refresh sessions to update the sidebar
+        onRefreshSessions();
       } else {
         // Continue existing active session
+        const currentSessionId = activeSessionId || sessionId;
         await window.claudeAPI.continueSession({
-          sessionId,
+          sessionId: currentSessionId,
           prompt,
           model
         });
@@ -417,13 +418,14 @@ export function UnifiedSessionView({
   };
 
   const handleCancel = async () => {
-    await window.claudeAPI.cancelSession(sessionId);
+    const currentSessionId = activeSessionId || sessionId;
+    await window.claudeAPI.cancelSession(currentSessionId);
     setIsLoading(false);
   };
 
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f]">
+    <div className="h-full w-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
       {/* Session Info Header (only for historical sessions) */}
       {isHistorical && (
         <div className="px-6 py-4 border-b border-[#2a2a2a] bg-[#1a1a1a]/95 backdrop-blur">
@@ -445,7 +447,7 @@ export function UnifiedSessionView({
       )}
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">
         {isLoading && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-96">
             <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />

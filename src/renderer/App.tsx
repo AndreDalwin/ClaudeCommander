@@ -187,13 +187,6 @@ function App() {
             projectId={selectedProject.id}
             sessionName={selectedDiscoveredSession.first_message || `Session ${selectedDiscoveredSession.id.substring(0, 8)}`}
             projectPath={selectedProject.path}
-            onResumeSession={(newSessionId) => {
-              // Navigate to the new active session
-              setActiveSessionId(newSessionId);
-              setCurrentView('session');
-              // Reload sessions to include the new one
-              loadSessions();
-            }}
           />
         ) : null;
       
@@ -353,7 +346,7 @@ function App() {
         <>
           {renderSidebar()}
           {/* Main Content Area */}
-          <main className="flex-1 flex flex-col">
+          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {renderContent()}
           </main>
         </>
