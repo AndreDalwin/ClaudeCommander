@@ -83,6 +83,8 @@ export class ClaudeSession extends EventEmitter {
 
     console.log('Spawning Claude process:', claudePath, args);
     console.log('Working directory:', this.projectPath);
+    console.log('Auto mode enabled:', this.autoMode);
+    console.log('Full command:', `${claudePath} ${args.join(' ')}`);
 
     this.process = spawn(claudePath, args, {
       cwd: this.projectPath,
@@ -199,6 +201,8 @@ export class ClaudeSession extends EventEmitter {
     }
 
     console.log('Resuming Claude session:', this.claudeSessionId, args);
+    console.log('Auto mode enabled:', this.autoMode);
+    console.log('Full command:', `${claudePath} ${args.join(' ')}`);
 
     this.process = spawn(claudePath, args, {
       cwd: this.projectPath,

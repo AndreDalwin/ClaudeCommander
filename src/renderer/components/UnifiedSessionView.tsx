@@ -563,32 +563,6 @@ export function UnifiedSessionView({
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
       
-      {/* Auto Mode Toggle for Historical Sessions */}
-      {isHistorical && !isNowActive && (
-        <div className="flex items-center justify-between px-6 py-3 border-b border-[#2a2a2a] bg-[#1a1a1a]/50">
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoMode}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setAutoMode(checked);
-                  if (checked && !localStorage.getItem('autoModeWarningShown')) {
-                    setShowAutoModeWarning(true);
-                  }
-                }}
-                className="w-4 h-4 bg-[#2a2a2a] border-2 border-[#3a3a3a] rounded focus:ring-2 focus:ring-blue-500 text-blue-500"
-              />
-              <div className="flex items-center gap-2 text-sm">
-                <Zap className="w-4 h-4 text-yellow-400" />
-                <span className="text-gray-300">Enable Auto Mode</span>
-                <span className="text-xs text-gray-500">(Tools execute without approval)</span>
-              </div>
-            </label>
-          </div>
-        </div>
-      )}
 
       {/* Auto Mode Status for Active Sessions */}
       {!isHistorical && sessionInfo?.autoMode && (
@@ -627,6 +601,14 @@ export function UnifiedSessionView({
         onCancel={handleCancel}
         isLoading={isLoading}
         disabled={false}
+        showAutoMode={isHistorical && !isNowActive}
+        autoMode={autoMode}
+        onAutoModeChange={(enabled) => {
+          setAutoMode(enabled);
+          if (enabled && !localStorage.getItem('autoModeWarningShown')) {
+            setShowAutoModeWarning(true);
+          }
+        }}
       />
 
       {/* Auto Mode Warning Dialog */}

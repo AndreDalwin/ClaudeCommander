@@ -83,6 +83,7 @@ export function setupIpcHandlers(
     autoMode?: boolean;
   }) => {
     console.log('Resuming discovered session:', sessionId, 'in project:', projectPath);
+    console.log('Auto mode requested:', autoMode);
     try {
       // Check if this session is already active
       const existingSession = claudeManager.getSessionByClaudeId(sessionId);
@@ -108,6 +109,7 @@ export function setupIpcHandlers(
       // Create a new ClaudeSession for the resumed session
       // Use a better name that doesn't duplicate the session ID
       const sessionName = name?.includes('Session') ? name : (name || `${sessionId.substring(0, 8)}`);
+      console.log('Creating session with autoMode:', autoMode || false);
       const session = claudeManager.createSession(sessionName, projectPath, autoMode || false);
       
       // Set the Claude session ID so resume works properly

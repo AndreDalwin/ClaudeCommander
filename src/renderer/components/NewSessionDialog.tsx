@@ -127,28 +127,41 @@ export function NewSessionDialog({
           </div>
 
           <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.autoMode || false}
-                  onChange={e => {
-                    const checked = e.target.checked;
-                    setFormData(prev => ({ ...prev, autoMode: checked }));
-                    if (checked && !localStorage.getItem('autoModeWarningShown')) {
-                      setShowAutoModeWarning(true);
-                    }
-                  }}
-                  className="w-5 h-5 bg-[#2a2a2a] border-2 border-[#3a3a3a] rounded focus:ring-2 focus:ring-blue-500 text-blue-500"
-                />
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    Auto Mode
-                  </div>
-                  <div className="text-xs text-gray-500">Allow Claude to use tools without approval</div>
+            <label className="block mb-2 text-sm font-medium text-gray-300">Auto Mode</label>
+            <div 
+              className={`relative flex items-center justify-between p-4 bg-[#2a2a2a] border rounded-xl cursor-pointer transition-all ${
+                formData.autoMode 
+                  ? 'border-yellow-500/50 bg-yellow-500/5' 
+                  : 'border-[#3a3a3a] hover:border-[#4a4a4a]'
+              }`}
+              onClick={() => {
+                const newValue = !formData.autoMode;
+                setFormData(prev => ({ ...prev, autoMode: newValue }));
+                if (newValue && !localStorage.getItem('autoModeWarningShown')) {
+                  setShowAutoModeWarning(true);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                  formData.autoMode ? 'bg-yellow-500/20' : 'bg-[#333333]'
+                }`}>
+                  <Zap className={`w-5 h-5 transition-colors ${
+                    formData.autoMode ? 'text-yellow-400' : 'text-gray-500'
+                  }`} />
                 </div>
-              </label>
+                <div>
+                  <div className="text-sm font-medium text-white">Enable Auto Mode</div>
+                  <div className="text-xs text-gray-400">Claude executes tools without asking for approval</div>
+                </div>
+              </div>
+              <div className={`w-12 h-6 rounded-full transition-colors ${
+                formData.autoMode ? 'bg-yellow-500' : 'bg-[#4a4a4a]'
+              }`}>
+                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                  formData.autoMode ? 'translate-x-6' : 'translate-x-0.5'
+                } mt-0.5`} />
+              </div>
             </div>
           </div>
 
