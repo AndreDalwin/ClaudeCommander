@@ -190,7 +190,7 @@ export class ClaudeStreamParser {
     }
   }
 
-  handleComplete(code: number): void {
+  handleComplete(_code: number): void {
     // Finalize any pending text
     this.finalizeText();
     

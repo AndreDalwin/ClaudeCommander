@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import { BrowserWindow } from 'electron';
 import { ClaudeBinaryFinder } from './claudeBinary';
 import { ClaudeStreamParser } from './claudeStreamParser';
-import { Message, ErrorData, CompletionData } from '@shared/types';
+import { Message } from '@shared/types';
 
 /**
  * Session ID Architecture Documentation
@@ -47,7 +47,7 @@ export class ClaudeSession extends EventEmitter {
   claudeSessionId: string | null = null; // The actual session ID from Claude
   claudeProjectId: string | null = null; // The project ID from Claude
   resumedFrom: string | null = null; // If resumed, stores the original Claude session ID
-  autoMode: boolean = false; // Whether to use --dangerously-skip-permissions
+  autoMode = false; // Whether to use --dangerously-skip-permissions
   private streamParser?: ClaudeStreamParser;
 
   constructor(id: string, name: string, projectPath: string, autoMode = false) {
@@ -83,8 +83,6 @@ export class ClaudeSession extends EventEmitter {
 
     console.log('Spawning Claude process:', claudePath, args);
     console.log('Working directory:', this.projectPath);
-    console.log('Auto mode enabled:', this.autoMode);
-    console.log('Full command:', `${claudePath} ${args.join(' ')}`);
 
     this.process = spawn(claudePath, args, {
       cwd: this.projectPath,
@@ -201,8 +199,6 @@ export class ClaudeSession extends EventEmitter {
     }
 
     console.log('Resuming Claude session:', this.claudeSessionId, args);
-    console.log('Auto mode enabled:', this.autoMode);
-    console.log('Full command:', `${claudePath} ${args.join(' ')}`);
 
     this.process = spawn(claudePath, args, {
       cwd: this.projectPath,

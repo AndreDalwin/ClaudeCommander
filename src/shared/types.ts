@@ -116,7 +116,8 @@ export interface ClaudeAPI {
     sessionId: string; 
     name: string;
     prompt: string; 
-    model: string 
+    model: string;
+    autoMode?: boolean;
   }) => Promise<ClaudeSession>;
   getSessions: () => Promise<ClaudeSession[]>;
   getSessionMessages: (sessionId: string) => Promise<Message[]>;
