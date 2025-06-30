@@ -48,6 +48,7 @@ export interface Message {
   // Tool result
   output?: any;
   tool_use_id_result?: string;
+  parent_tool_use_id?: string; // For user messages containing tool results
   // Thinking message
   thinking?: string;
   accumulatedThinking?: string; // For streaming thinking

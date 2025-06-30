@@ -84,7 +84,7 @@ export function isSystemReminder(message: Message): boolean {
 /**
  * Checks if a user message contains only tool results that will be handled by widgets
  */
-export function isUserMessageWithOnlyWidgetToolResults(message: Message, allMessages: Message[]): boolean {
+export function isUserMessageWithOnlyWidgetToolResults(message: Message & { parent_tool_use_id?: string }, allMessages: Message[]): boolean {
   if (message.type !== 'user' || !message.message?.content) return false;
   
   if (!Array.isArray(message.message.content)) return false;
@@ -96,8 +96,30 @@ export function isUserMessageWithOnlyWidgetToolResults(message: Message, allMess
       const toolUse = allMessages.find(msg => 
         msg.type === 'tool_use' && msg.tool_use_id === item.tool_use_id
       );
+      
+      // Also check if this message has a parent_tool_use_id that matches a tool with a widget
+      if (!toolUse && message.parent_tool_use_id) {
+        const parentToolUse = allMessages.find(msg =>
+          msg.type === 'tool_use' && msg.tool_use_id === message.parent_tool_use_id
+        );
+        if (parentToolUse && hasCustomWidget(parentToolUse.name || '')) {
+          return false; // This tool result will be handled by a widget
+        }
+      }
+      
       if (toolUse && hasCustomWidget(toolUse.name || '')) {
         return false; // This tool result will be handled by a widget
+      }
+      
+      // Special case: Task tool results often have text content that should still be hidden
+      // Check if this is a Task tool result by looking at the parent
+      if (message.parent_tool_use_id) {
+        const parentTool = allMessages.find(msg =>
+          msg.type === 'tool_use' && msg.tool_use_id === message.parent_tool_use_id
+        );
+        if (parentTool && (parentTool.name === 'task' || parentTool.name === 'Task')) {
+          return false; // Hide Task tool results even if they have text content
+        }
       }
     }
     
@@ -111,7 +133,7 @@ export function isUserMessageWithOnlyWidgetToolResults(message: Message, allMess
 /**
  * Main filtering function that determines if a message should be shown
  */
-export function shouldShowMessage(message: Message, index: number, allMessages: Message[]): boolean {
+export function shouldShowMessage(message: Message, _index: number, allMessages: Message[]): boolean {
   // ✅ ALWAYS SHOWN
   
   // Assistant Text Responses
@@ -121,9 +143,11 @@ export function shouldShowMessage(message: Message, index: number, allMessages: 
   
   // Regular User Input (non-meta, non-empty)
   if (message.type === 'user' && !message.isMeta && !isEmptyMessage(message)) {
-    // But skip if it only contains widget-handled tool results
-    if (isUserMessageWithOnlyWidgetToolResults(message, allMessages)) {
-      return false;
+    // Hide user messages where the first content item is tool_result (including errors)
+    if (message.message?.content && Array.isArray(message.message.content)) {
+      if (message.message.content.length > 0 && message.message.content[0].type === 'tool_result') {
+        return false;
+      }
     }
     return true;
   }

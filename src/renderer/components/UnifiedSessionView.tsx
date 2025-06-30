@@ -277,7 +277,8 @@ export function UnifiedSessionView({
     const currentSessionId = activeSessionId || sessionId;
     const sessionMessages = await window.claudeAPI.getSessionMessages(currentSessionId);
     setUnfilteredMessages(sessionMessages);
-    setMessages(sessionMessages);
+    // Apply filtering to active session messages too
+    setMessages(filterMessages(sessionMessages));
     
     // Get session info from the sessions list
     const sessions = await window.claudeAPI.getSessions();
@@ -441,13 +442,12 @@ export function UnifiedSessionView({
           
           // Only add message if it should be shown
           setMessages(prev => {
-            // For tool_result, we need to check if we already have the messages in prev
-            const checkMessages = message.type === 'tool_result' ? prev : [...prev, message];
-            const checkIndex = message.type === 'tool_result' ? prev.length : prev.length;
+            // Create a temporary array with the new message to check filtering rules
+            const tempMessages = [...prev, message];
             
             // Check if this message should be shown based on filtering rules
-            if (shouldShowMessage(message, checkIndex, checkMessages)) {
-              return [...prev, message];
+            if (shouldShowMessage(message, tempMessages.length - 1, tempMessages)) {
+              return tempMessages;
             }
             // Don't add the message if it should be filtered
             return prev;
@@ -456,7 +456,13 @@ export function UnifiedSessionView({
           
         default:
           setUnfilteredMessages(prev => [...prev, message]);
-          setMessages(prev => [...prev, message]);
+          setMessages(prev => {
+            const tempMessages = [...prev, message];
+            if (shouldShowMessage(message, tempMessages.length - 1, tempMessages)) {
+              return tempMessages;
+            }
+            return prev;
+          });
       }
     });
   };
