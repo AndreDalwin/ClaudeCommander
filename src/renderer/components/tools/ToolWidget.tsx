@@ -84,7 +84,7 @@ export function ToolWidget({ message, result, allMessages, messageIndex }: ToolW
   };
 
   return (
-    <div className="tool-widget my-4">
+    <div className="tool-widget my-1">
       {getToolComponent()}
     </div>
   );
