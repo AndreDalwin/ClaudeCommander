@@ -27,7 +27,8 @@ export function setupIpcHandlers(
         data.projectPath,
         data.prompt,
         data.model,
-        mainWindow
+        mainWindow,
+        data.autoMode || false
       );
       console.log('Session created successfully:', session.id);
       
@@ -44,7 +45,8 @@ export function setupIpcHandlers(
         projectPath: session.projectPath,
         isActive: session.isActive,
         createdAt: session.createdAt,
-        messageCount: session.messages.length
+        messageCount: session.messages.length,
+        autoMode: session.autoMode
       };
     } catch (error) {
       console.error('Failed to create session:', error);
@@ -72,12 +74,13 @@ export function setupIpcHandlers(
   });
 
   // Resume a discovered session
-  ipcMain.handle('resume-session', async (_event, { projectPath, sessionId, name, prompt, model }: { 
+  ipcMain.handle('resume-session', async (_event, { projectPath, sessionId, name, prompt, model, autoMode }: { 
     projectPath: string; 
     sessionId: string; 
     name: string;
     prompt: string; 
-    model: string 
+    model: string;
+    autoMode?: boolean;
   }) => {
     console.log('Resuming discovered session:', sessionId, 'in project:', projectPath);
     try {
@@ -85,6 +88,10 @@ export function setupIpcHandlers(
       const existingSession = claudeManager.getSessionByClaudeId(sessionId);
       if (existingSession) {
         // Session already active, just continue it
+        // Update autoMode if provided
+        if (autoMode !== undefined) {
+          existingSession.autoMode = autoMode;
+        }
         await claudeManager.continueSession(existingSession.id, prompt, model, mainWindow);
         return {
           id: existingSession.id,
@@ -93,14 +100,15 @@ export function setupIpcHandlers(
           isActive: existingSession.isActive,
           createdAt: existingSession.createdAt,
           messageCount: existingSession.messages.length,
-          claudeSessionId: existingSession.claudeSessionId
+          claudeSessionId: existingSession.claudeSessionId,
+          autoMode: existingSession.autoMode
         };
       }
       
       // Create a new ClaudeSession for the resumed session
       // Use a better name that doesn't duplicate the session ID
       const sessionName = name?.includes('Session') ? name : (name || `${sessionId.substring(0, 8)}`);
-      const session = claudeManager.createSession(sessionName, projectPath);
+      const session = claudeManager.createSession(sessionName, projectPath, autoMode || false);
       
       // Set the Claude session ID so resume works properly
       session.claudeSessionId = sessionId;
@@ -138,7 +146,8 @@ export function setupIpcHandlers(
         createdAt: session.createdAt,
         messageCount: session.messages.length,
         claudeSessionId: session.claudeSessionId,
-        resumedFrom: session.resumedFrom
+        resumedFrom: session.resumedFrom,
+        autoMode: session.autoMode
       };
     } catch (error) {
       console.error('Failed to resume session:', error);

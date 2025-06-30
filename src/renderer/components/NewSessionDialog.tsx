@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SessionData } from '@shared/types';
-import { X, FolderOpen, Terminal } from 'lucide-react';
+import { X, FolderOpen, Terminal, Zap, AlertTriangle } from 'lucide-react';
 
 interface NewSessionDialogProps {
   onClose: () => void;
@@ -24,8 +24,10 @@ export function NewSessionDialog({
     name: '',
     projectPath: defaultPath || '',
     prompt: '',
-    model: 'opus'
+    model: 'opus',
+    autoMode: false
   });
+  const [showAutoModeWarning, setShowAutoModeWarning] = useState(false);
 
   const handleSelectDirectory = async () => {
     const path = await window.claudeAPI.selectDirectory();
@@ -111,7 +113,7 @@ export function NewSessionDialog({
             />
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <label className="block mb-2 text-sm font-medium text-gray-300">Model</label>
             <select
               value={formData.model}
@@ -122,6 +124,32 @@ export function NewSessionDialog({
               <option value="sonnet">Claude Sonnet 4</option>
               <option value="haiku">Claude 3.5 Haiku</option>
             </select>
+          </div>
+
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.autoMode || false}
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setFormData(prev => ({ ...prev, autoMode: checked }));
+                    if (checked && !localStorage.getItem('autoModeWarningShown')) {
+                      setShowAutoModeWarning(true);
+                    }
+                  }}
+                  className="w-5 h-5 bg-[#2a2a2a] border-2 border-[#3a3a3a] rounded focus:ring-2 focus:ring-blue-500 text-blue-500"
+                />
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    Auto Mode
+                  </div>
+                  <div className="text-xs text-gray-500">Allow Claude to use tools without approval</div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-3 justify-end">
@@ -141,6 +169,54 @@ export function NewSessionDialog({
           </div>
         </form>
       </div>
+
+      {/* Auto Mode Warning Dialog */}
+      {showAutoModeWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 max-w-md shadow-2xl">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Auto Mode Warning</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Auto mode allows Claude to use tools and execute commands without asking for your approval each time.
+                  This includes:
+                </p>
+                <ul className="text-sm text-gray-400 space-y-1 mb-4">
+                  <li>• Running shell commands</li>
+                  <li>• Reading and writing files</li>
+                  <li>• Making changes to your codebase</li>
+                </ul>
+                <p className="text-sm text-gray-400">
+                  Only enable this if you trust the task and understand the implications.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  setFormData(prev => ({ ...prev, autoMode: false }));
+                }}
+                className="px-4 py-2 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#333333] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  localStorage.setItem('autoModeWarningShown', 'true');
+                }}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export interface ClaudeSession {
   claudeSessionId?: string; // The actual Claude session ID
   claudeProjectId?: string; // The Claude project ID
   resumedFrom?: string; // If resumed, stores the original Claude session ID
+  autoMode?: boolean; // Whether auto mode is enabled (--dangerously-skip-permissions)
 }
 
 // Unified session interface that represents both active and discovered sessions
@@ -22,6 +23,7 @@ export interface UnifiedSession {
   source: 'active' | 'discovered'; // Where this session came from
   firstMessage?: string; // For discovered sessions
   canResume: boolean; // Whether this session can be resumed
+  autoMode?: boolean; // Whether auto mode is enabled
 }
 
 export interface Message {
@@ -74,6 +76,7 @@ export interface SessionData {
   projectPath: string;
   prompt: string;
   model: 'opus' | 'sonnet' | 'haiku';
+  autoMode?: boolean;
 }
 
 export interface ErrorData {

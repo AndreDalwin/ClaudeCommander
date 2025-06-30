@@ -47,13 +47,15 @@ export class ClaudeSession extends EventEmitter {
   claudeSessionId: string | null = null; // The actual session ID from Claude
   claudeProjectId: string | null = null; // The project ID from Claude
   resumedFrom: string | null = null; // If resumed, stores the original Claude session ID
+  autoMode: boolean = false; // Whether to use --dangerously-skip-permissions
   private streamParser?: ClaudeStreamParser;
 
-  constructor(id: string, name: string, projectPath: string) {
+  constructor(id: string, name: string, projectPath: string, autoMode = false) {
     super();
     this.id = id;
     this.name = name;
     this.projectPath = projectPath;
+    this.autoMode = autoMode;
     this.createdAt = new Date().toISOString();
   }
 
@@ -68,6 +70,11 @@ export class ClaudeSession extends EventEmitter {
       '--output-format', 'stream-json',
       '--verbose'
     ];
+
+    // Add auto mode flag if enabled
+    if (this.autoMode) {
+      args.push('--dangerously-skip-permissions');
+    }
 
     // Add continue flag if this isn't the first message
     if (this.messages.length > 0) {
@@ -186,6 +193,11 @@ export class ClaudeSession extends EventEmitter {
       '--verbose'
     ];
 
+    // Add auto mode flag if enabled
+    if (this.autoMode) {
+      args.push('--dangerously-skip-permissions');
+    }
+
     console.log('Resuming Claude session:', this.claudeSessionId, args);
 
     this.process = spawn(claudePath, args, {
@@ -286,9 +298,9 @@ export class ClaudeManager {
     return { path: this.claudePath, version };
   }
 
-  createSession(name: string, projectPath: string): ClaudeSession {
+  createSession(name: string, projectPath: string, autoMode = false): ClaudeSession {
     const id = uuidv4();
-    const session = new ClaudeSession(id, name, projectPath);
+    const session = new ClaudeSession(id, name, projectPath, autoMode);
     this.sessions.set(id, session);
     return session;
   }
@@ -330,6 +342,7 @@ export class ClaudeManager {
     messageCount: number;
     claudeSessionId?: string;
     resumedFrom?: string;
+    autoMode?: boolean;
   }> {
     return Array.from(this.sessions.values()).map(session => ({
       id: session.id,
@@ -339,15 +352,16 @@ export class ClaudeManager {
       createdAt: session.createdAt,
       messageCount: session.messages.length,
       claudeSessionId: session.claudeSessionId || undefined,
-      resumedFrom: session.resumedFrom || undefined
+      resumedFrom: session.resumedFrom || undefined,
+      autoMode: session.autoMode
     }));
   }
 
-  async startNewSession(name: string, projectPath: string, prompt: string, model: string, mainWindow: BrowserWindow): Promise<ClaudeSession> {
+  async startNewSession(name: string, projectPath: string, prompt: string, model: string, mainWindow: BrowserWindow, autoMode = false): Promise<ClaudeSession> {
     if (!this.claudePath) {
       throw new Error('Claude binary not initialized');
     }
-    const session = this.createSession(name, projectPath);
+    const session = this.createSession(name, projectPath, autoMode);
     await session.start(this.claudePath, prompt, model, mainWindow);
     return session;
   }

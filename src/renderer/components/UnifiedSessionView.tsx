@@ -3,7 +3,7 @@ import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { Message, ClaudeSession } from '@shared/types';
 import { filterMessages, shouldShowMessage } from '../utils/messageFiltering';
-import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
+import { MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle } from 'lucide-react';
 
 interface UnifiedSessionViewProps {
   sessionId: string;
@@ -28,6 +28,8 @@ export function UnifiedSessionView({
   const [isLoading, setIsLoading] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<ClaudeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoMode, setAutoMode] = useState(false);
+  const [showAutoModeWarning, setShowAutoModeWarning] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isResumingRef = useRef(false);
   
@@ -284,6 +286,9 @@ export function UnifiedSessionView({
     const sessions = await window.claudeAPI.getSessions();
     const info = sessions.find(s => s.id === currentSessionId);
     setSessionInfo(info || null);
+    if (info) {
+      setAutoMode(info.autoMode || false);
+    }
   };
 
   const subscribeToMessages = () => {
@@ -514,7 +519,8 @@ export function UnifiedSessionView({
           sessionId: sessionId,
           name: sessionName || sessionId.substring(0, 8),
           prompt: prompt,
-          model: model
+          model: model,
+          autoMode: autoMode
         });
         
         setIsNowActive(true);
@@ -556,6 +562,41 @@ export function UnifiedSessionView({
 
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
+      
+      {/* Auto Mode Toggle for Historical Sessions */}
+      {isHistorical && !isNowActive && (
+        <div className="flex items-center justify-between px-6 py-3 border-b border-[#2a2a2a] bg-[#1a1a1a]/50">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoMode}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setAutoMode(checked);
+                  if (checked && !localStorage.getItem('autoModeWarningShown')) {
+                    setShowAutoModeWarning(true);
+                  }
+                }}
+                className="w-4 h-4 bg-[#2a2a2a] border-2 border-[#3a3a3a] rounded focus:ring-2 focus:ring-blue-500 text-blue-500"
+              />
+              <div className="flex items-center gap-2 text-sm">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <span className="text-gray-300">Enable Auto Mode</span>
+                <span className="text-xs text-gray-500">(Tools execute without approval)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Auto Mode Status for Active Sessions */}
+      {!isHistorical && sessionInfo?.autoMode && (
+        <div className="flex items-center gap-2 px-6 py-2 bg-yellow-500/10 border-b border-yellow-500/20">
+          <Zap className="w-4 h-4 text-yellow-400" />
+          <span className="text-sm text-yellow-400">Auto Mode Active</span>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">
@@ -587,6 +628,54 @@ export function UnifiedSessionView({
         isLoading={isLoading}
         disabled={false}
       />
+
+      {/* Auto Mode Warning Dialog */}
+      {showAutoModeWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 max-w-md shadow-2xl">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Auto Mode Warning</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Auto mode allows Claude to use tools and execute commands without asking for your approval each time.
+                  This includes:
+                </p>
+                <ul className="text-sm text-gray-400 space-y-1 mb-4">
+                  <li>• Running shell commands</li>
+                  <li>• Reading and writing files</li>
+                  <li>• Making changes to your codebase</li>
+                </ul>
+                <p className="text-sm text-gray-400">
+                  Only enable this if you trust the task and understand the implications.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  setAutoMode(false);
+                }}
+                className="px-4 py-2 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#333333] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  localStorage.setItem('autoModeWarningShown', 'true');
+                }}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
