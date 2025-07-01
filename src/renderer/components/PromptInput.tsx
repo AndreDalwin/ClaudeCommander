@@ -1,14 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Square, ChevronDown } from 'lucide-react';
+import { Send, Square, ChevronDown, Zap } from 'lucide-react';
 
 interface PromptInputProps {
   onSubmit: (prompt: string, model: string) => void;
   onCancel: () => void;
   isLoading: boolean;
   disabled?: boolean;
+  showAutoMode?: boolean;
+  autoMode?: boolean;
+  onAutoModeChange?: (enabled: boolean) => void;
 }
 
-export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptInputProps) {
+export function PromptInput({ 
+  onSubmit, 
+  onCancel, 
+  isLoading, 
+  disabled,
+  showAutoMode = false,
+  autoMode = false,
+  onAutoModeChange
+}: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('opus');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,6 +73,23 @@ export function PromptInput({ onSubmit, onCancel, isLoading, disabled }: PromptI
           rows={1}
           style={{ height: '46px' }}
         />
+        
+        {showAutoMode && (
+          <button
+            type="button"
+            onClick={() => onAutoModeChange?.(!autoMode)}
+            disabled={isLoading || disabled}
+            className={`h-[46px] px-3 flex items-center gap-2 rounded-lg border transition-all ${
+              autoMode
+                ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-400'
+                : 'bg-[#2a2a2a] border-[#3a3a3a] text-gray-400 hover:text-gray-300 hover:border-[#4a4a4a]'
+            } disabled:opacity-60`}
+            title="Toggle Auto Mode"
+          >
+            <Zap className="w-4 h-4" />
+            <span className="text-sm font-medium">Auto</span>
+          </button>
+        )}
         
         <div className="relative">
           <select 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SessionData } from '@shared/types';
-import { X, FolderOpen, Terminal } from 'lucide-react';
+import { X, FolderOpen, Terminal, Zap, AlertTriangle } from 'lucide-react';
 
 interface NewSessionDialogProps {
   onClose: () => void;
@@ -24,8 +24,10 @@ export function NewSessionDialog({
     name: '',
     projectPath: defaultPath || '',
     prompt: '',
-    model: 'opus'
+    model: 'opus',
+    autoMode: false
   });
+  const [showAutoModeWarning, setShowAutoModeWarning] = useState(false);
 
   const handleSelectDirectory = async () => {
     const path = await window.claudeAPI.selectDirectory();
@@ -111,7 +113,7 @@ export function NewSessionDialog({
             />
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <label className="block mb-2 text-sm font-medium text-gray-300">Model</label>
             <select
               value={formData.model}
@@ -122,6 +124,45 @@ export function NewSessionDialog({
               <option value="sonnet">Claude Sonnet 4</option>
               <option value="haiku">Claude 3.5 Haiku</option>
             </select>
+          </div>
+
+          <div className="mb-8">
+            <label className="block mb-2 text-sm font-medium text-gray-300">Auto Mode</label>
+            <div 
+              className={`relative flex items-center justify-between p-4 bg-[#2a2a2a] border rounded-xl cursor-pointer transition-all ${
+                formData.autoMode 
+                  ? 'border-yellow-500/50 bg-yellow-500/5' 
+                  : 'border-[#3a3a3a] hover:border-[#4a4a4a]'
+              }`}
+              onClick={() => {
+                const newValue = !formData.autoMode;
+                setFormData(prev => ({ ...prev, autoMode: newValue }));
+                if (newValue && !localStorage.getItem('autoModeWarningShown')) {
+                  setShowAutoModeWarning(true);
+                }
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                  formData.autoMode ? 'bg-yellow-500/20' : 'bg-[#333333]'
+                }`}>
+                  <Zap className={`w-5 h-5 transition-colors ${
+                    formData.autoMode ? 'text-yellow-400' : 'text-gray-500'
+                  }`} />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-white">Enable Auto Mode</div>
+                  <div className="text-xs text-gray-400">Claude executes tools without asking for approval</div>
+                </div>
+              </div>
+              <div className={`w-12 h-6 rounded-full transition-colors ${
+                formData.autoMode ? 'bg-yellow-500' : 'bg-[#4a4a4a]'
+              }`}>
+                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${
+                  formData.autoMode ? 'translate-x-6' : 'translate-x-0.5'
+                } mt-0.5`} />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3 justify-end">
@@ -141,6 +182,54 @@ export function NewSessionDialog({
           </div>
         </form>
       </div>
+
+      {/* Auto Mode Warning Dialog */}
+      {showAutoModeWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 max-w-md shadow-2xl">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Auto Mode Warning</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Auto mode allows Claude to use tools and execute commands without asking for your approval each time.
+                  This includes:
+                </p>
+                <ul className="text-sm text-gray-400 space-y-1 mb-4">
+                  <li>• Running shell commands</li>
+                  <li>• Reading and writing files</li>
+                  <li>• Making changes to your codebase</li>
+                </ul>
+                <p className="text-sm text-gray-400">
+                  Only enable this if you trust the task and understand the implications.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  setFormData(prev => ({ ...prev, autoMode: false }));
+                }}
+                className="px-4 py-2 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#333333] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  localStorage.setItem('autoModeWarningShown', 'true');
+                }}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

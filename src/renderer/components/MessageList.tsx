@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '@shared/types';
 import { ToolWidget } from './tools/ToolWidget';
-import { ChevronDown, User, Bot, Brain, CheckCircle, XCircle, Info, AlertTriangle, BarChart3, Zap } from 'lucide-react';
+import { ChevronDown, User, Brain, CheckCircle, XCircle, Info, AlertTriangle, BarChart3, Zap } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface MessageListProps {
   messages: Message[];
@@ -65,7 +66,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       }
       
       return (
-        <div key={index} className="flex justify-end mb-6 animate-fade-in-up">
+        <div key={index} className="flex justify-end mb-3 animate-fade-in-up">
           <div className="max-w-[80%] p-4 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg overflow-hidden">
             <div className="flex items-center gap-2 text-xs font-semibold mb-2 opacity-90">
               <User className="w-3 h-3" />
@@ -96,18 +97,37 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`flex justify-start animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
-          <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg overflow-hidden">
-            <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
-              <Bot className="w-3 h-3 text-blue-400" />
-              Claude
-              {message.isStreaming && (
-                <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-              )}
-            </div>
-            <div className="leading-relaxed whitespace-pre-wrap break-words text-white">
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown 
+              components={{
+                p: ({children}) => <p className="mb-2">{children}</p>,
+                pre: ({children}) => <pre className="bg-[#0f0f0f] p-3 rounded-lg overflow-x-auto mb-2">{children}</pre>,
+                code: ({children, ...props}) => {
+                  const isInline = !props.node?.position;
+                  return isInline ? 
+                    <code className="bg-[#2a2a2a] px-1 py-0.5 rounded text-sm">{children}</code> : 
+                    <code>{children}</code>;
+                },
+                ul: ({children}) => <ul className="list-disc pl-6 mb-2">{children}</ul>,
+                ol: ({children}) => <ol className="list-decimal pl-6 mb-2">{children}</ol>,
+                li: ({children}) => <li className="mb-1">{children}</li>,
+                h1: ({children}) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
+                h2: ({children}) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
+                h3: ({children}) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                blockquote: ({children}) => <blockquote className="border-l-4 border-gray-600 pl-4 italic mb-2">{children}</blockquote>,
+                a: ({href, children}) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                hr: () => <hr className="border-gray-700 my-4" />,
+                table: ({children}) => <table className="border-collapse table-auto w-full mb-2">{children}</table>,
+                th: ({children}) => <th className="border border-gray-700 px-3 py-2 bg-[#1a1a1a]">{children}</th>,
+                td: ({children}) => <td className="border border-gray-700 px-3 py-2">{children}</td>
+              }}
+            >
               {textContent}
-            </div>
+            </ReactMarkdown>
+            {message.isStreaming && (
+              <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            )}
           </div>
         </div>
       );
@@ -134,7 +154,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-4' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20">
             <Brain className="w-3 h-3 text-purple-400" />
             <button
@@ -176,7 +196,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
 
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           {renderToolWidget(message, result, index)}
         </div>
       );
@@ -189,7 +209,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 shadow-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-emerald-400" />
@@ -212,7 +232,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className={`p-4 rounded-2xl shadow-lg ${isError ? 'bg-red-500/10 border border-red-500/30' : 'bg-[#1a1a1a] border border-[#2a2a2a]'}`}>
             <div className="flex items-center gap-2 mb-2">
               {isError ? (
@@ -242,7 +262,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className={`p-4 rounded-2xl shadow-lg ${
             isReminder ? 'bg-yellow-500/10 border border-yellow-500/30' : 
             isInit ? 'bg-blue-500/10 border border-blue-500/30' : 
@@ -279,7 +299,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className="p-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <BarChart3 className="w-3 h-3" />
@@ -301,7 +321,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
       const isAfterUser = prevMessage?.type === 'user';
       
       return (
-        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
+        <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-2' : 'mb-0.5'}`}>
           <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 shadow-lg">
             <div className="flex items-center gap-2 font-semibold mb-2 text-red-400">
               <XCircle className="w-4 h-4" />
@@ -322,8 +342,33 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
         message.message.content.forEach((content: any, contentIndex: number) => {
           if (content.type === 'text' && content.text) {
             assistantContent.push(
-              <div key={`text-${contentIndex}`} className="leading-relaxed whitespace-pre-wrap break-words text-white">
-                {content.text}
+              <div key={`text-${contentIndex}`} className="prose prose-invert max-w-none">
+                <ReactMarkdown 
+                  components={{
+                    p: ({children}) => <p className="mb-3">{children}</p>,
+                    pre: ({children}) => <pre className="bg-[#0f0f0f] p-3 rounded-lg overflow-x-auto mb-2">{children}</pre>,
+                    code: ({children, ...props}) => {
+                      const isInline = !props.node?.position;
+                      return isInline ? 
+                        <code className="bg-[#2a2a2a] px-1 py-0.5 rounded text-sm">{children}</code> : 
+                        <code>{children}</code>;
+                    },
+                    ul: ({children}) => <ul className="list-disc pl-6 mb-3">{children}</ul>,
+                    ol: ({children}) => <ol className="list-decimal pl-6 mb-3">{children}</ol>,
+                    li: ({children}) => <li className="mb-1">{children}</li>,
+                    h1: ({children}) => <h1 className="text-2xl font-bold mb-3">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-xl font-bold mb-3">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-gray-600 pl-4 italic mb-2">{children}</blockquote>,
+                    a: ({href, children}) => <a href={href} className="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                    hr: () => <hr className="border-gray-700 my-4" />,
+                    table: ({children}) => <table className="border-collapse table-auto w-full mb-2">{children}</table>,
+                    th: ({children}) => <th className="border border-gray-700 px-3 py-2 bg-[#1a1a1a]">{children}</th>,
+                    td: ({children}) => <td className="border border-gray-700 px-3 py-2">{children}</td>
+                  }}
+                >
+                  {content.text}
+                </ReactMarkdown>
               </div>
             );
           } else if (content.type === 'tool_use') {
@@ -375,14 +420,8 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
         const isAfterUser = prevMessage?.type === 'user';
         
         return (
-          <div key={index} className={`flex justify-start animate-fade-in-up ${isAfterUser ? 'mb-6' : 'mb-2'}`}>
-            <div className="max-w-[80%] p-4 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] shadow-lg">
-              <div className="flex items-center gap-2 text-xs font-semibold mb-2 text-gray-300">
-                <Bot className="w-3 h-3 text-blue-400" />
-                Claude
-              </div>
-              {assistantContent}
-            </div>
+          <div key={index} className={`animate-fade-in-up ${isAfterUser ? 'mb-3' : 'mb-1'}`}>
+            {assistantContent}
           </div>
         );
       }
@@ -407,7 +446,7 @@ export function MessageList({ messages, unfilteredMessages }: MessageListProps) 
   };
 
   return (
-    <div className="flex flex-col py-6 px-6 space-y-2 max-w-full">
+    <div className="flex flex-col py-3 px-6 space-y-0.5 max-w-full">
       {filteredMessages.map((message, index) => renderMessage(message, index))}
       <div ref={messagesEndRef} />
     </div>

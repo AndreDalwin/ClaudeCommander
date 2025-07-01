@@ -8,6 +8,7 @@ export interface ClaudeSession {
   claudeSessionId?: string; // The actual Claude session ID
   claudeProjectId?: string; // The Claude project ID
   resumedFrom?: string; // If resumed, stores the original Claude session ID
+  autoMode?: boolean; // Whether auto mode is enabled (--dangerously-skip-permissions)
 }
 
 // Unified session interface that represents both active and discovered sessions
@@ -22,6 +23,7 @@ export interface UnifiedSession {
   source: 'active' | 'discovered'; // Where this session came from
   firstMessage?: string; // For discovered sessions
   canResume: boolean; // Whether this session can be resumed
+  autoMode?: boolean; // Whether auto mode is enabled
 }
 
 export interface Message {
@@ -48,6 +50,7 @@ export interface Message {
   // Tool result
   output?: any;
   tool_use_id_result?: string;
+  parent_tool_use_id?: string; // For user messages containing tool results
   // Thinking message
   thinking?: string;
   accumulatedThinking?: string; // For streaming thinking
@@ -73,6 +76,7 @@ export interface SessionData {
   projectPath: string;
   prompt: string;
   model: 'opus' | 'sonnet' | 'haiku';
+  autoMode?: boolean;
 }
 
 export interface ErrorData {
@@ -112,7 +116,8 @@ export interface ClaudeAPI {
     sessionId: string; 
     name: string;
     prompt: string; 
-    model: string 
+    model: string;
+    autoMode?: boolean;
   }) => Promise<ClaudeSession>;
   getSessions: () => Promise<ClaudeSession[]>;
   getSessionMessages: (sessionId: string) => Promise<Message[]>;

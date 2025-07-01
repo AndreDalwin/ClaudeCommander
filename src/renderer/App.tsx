@@ -3,10 +3,9 @@ import { HomeScreen } from './components/HomeScreen';
 import { ProjectsView } from './components/ProjectsView';
 import { ProjectDetailView } from './components/ProjectDetailView';
 import { UnifiedSessionView } from './components/UnifiedSessionView';
-import { SessionList } from './components/SessionList';
 import { NewSessionDialog } from './components/NewSessionDialog';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
-import { ArrowLeft, Plus, FolderOpen, MessageSquare, Home } from 'lucide-react';
+import { ArrowLeft, Plus, MessageSquare, Home } from 'lucide-react';
 
 type ViewState = 'home' | 'projects' | 'project-detail' | 'session';
 

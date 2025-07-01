@@ -3,7 +3,7 @@ import { MessageList } from './MessageList';
 import { PromptInput } from './PromptInput';
 import { Message, ClaudeSession } from '@shared/types';
 import { filterMessages, shouldShowMessage } from '../utils/messageFiltering';
-import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
+import { MessageSquare, Loader2, AlertCircle, Zap, AlertTriangle } from 'lucide-react';
 
 interface UnifiedSessionViewProps {
   sessionId: string;
@@ -28,6 +28,8 @@ export function UnifiedSessionView({
   const [isLoading, setIsLoading] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<ClaudeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoMode, setAutoMode] = useState(false);
+  const [showAutoModeWarning, setShowAutoModeWarning] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isResumingRef = useRef(false);
   
@@ -277,12 +279,16 @@ export function UnifiedSessionView({
     const currentSessionId = activeSessionId || sessionId;
     const sessionMessages = await window.claudeAPI.getSessionMessages(currentSessionId);
     setUnfilteredMessages(sessionMessages);
-    setMessages(sessionMessages);
+    // Apply filtering to active session messages too
+    setMessages(filterMessages(sessionMessages));
     
     // Get session info from the sessions list
     const sessions = await window.claudeAPI.getSessions();
     const info = sessions.find(s => s.id === currentSessionId);
     setSessionInfo(info || null);
+    if (info) {
+      setAutoMode(info.autoMode || false);
+    }
   };
 
   const subscribeToMessages = () => {
@@ -441,13 +447,12 @@ export function UnifiedSessionView({
           
           // Only add message if it should be shown
           setMessages(prev => {
-            // For tool_result, we need to check if we already have the messages in prev
-            const checkMessages = message.type === 'tool_result' ? prev : [...prev, message];
-            const checkIndex = message.type === 'tool_result' ? prev.length : prev.length;
+            // Create a temporary array with the new message to check filtering rules
+            const tempMessages = [...prev, message];
             
             // Check if this message should be shown based on filtering rules
-            if (shouldShowMessage(message, checkIndex, checkMessages)) {
-              return [...prev, message];
+            if (shouldShowMessage(message, tempMessages.length - 1, tempMessages)) {
+              return tempMessages;
             }
             // Don't add the message if it should be filtered
             return prev;
@@ -456,7 +461,13 @@ export function UnifiedSessionView({
           
         default:
           setUnfilteredMessages(prev => [...prev, message]);
-          setMessages(prev => [...prev, message]);
+          setMessages(prev => {
+            const tempMessages = [...prev, message];
+            if (shouldShowMessage(message, tempMessages.length - 1, tempMessages)) {
+              return tempMessages;
+            }
+            return prev;
+          });
       }
     });
   };
@@ -508,7 +519,8 @@ export function UnifiedSessionView({
           sessionId: sessionId,
           name: sessionName || sessionId.substring(0, 8),
           prompt: prompt,
-          model: model
+          model: model,
+          autoMode: autoMode
         });
         
         setIsNowActive(true);
@@ -550,6 +562,15 @@ export function UnifiedSessionView({
 
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-br from-[#0a0a0a] via-[#111111] to-[#0f0f0f] overflow-hidden">
+      
+
+      {/* Auto Mode Status for Active Sessions */}
+      {!isHistorical && sessionInfo?.autoMode && (
+        <div className="flex items-center gap-2 px-6 py-2 bg-yellow-500/10 border-b border-yellow-500/20">
+          <Zap className="w-4 h-4 text-yellow-400" />
+          <span className="text-sm text-yellow-400">Auto Mode Active</span>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6">
@@ -580,7 +601,63 @@ export function UnifiedSessionView({
         onCancel={handleCancel}
         isLoading={isLoading}
         disabled={false}
+        showAutoMode={isHistorical && !isNowActive}
+        autoMode={autoMode}
+        onAutoModeChange={(enabled) => {
+          setAutoMode(enabled);
+          if (enabled && !localStorage.getItem('autoModeWarningShown')) {
+            setShowAutoModeWarning(true);
+          }
+        }}
       />
+
+      {/* Auto Mode Warning Dialog */}
+      {showAutoModeWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 max-w-md shadow-2xl">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Auto Mode Warning</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Auto mode allows Claude to use tools and execute commands without asking for your approval each time.
+                  This includes:
+                </p>
+                <ul className="text-sm text-gray-400 space-y-1 mb-4">
+                  <li>• Running shell commands</li>
+                  <li>• Reading and writing files</li>
+                  <li>• Making changes to your codebase</li>
+                </ul>
+                <p className="text-sm text-gray-400">
+                  Only enable this if you trust the task and understand the implications.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  setAutoMode(false);
+                }}
+                className="px-4 py-2 bg-[#2a2a2a] text-white rounded-lg hover:bg-[#333333] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowAutoModeWarning(false);
+                  localStorage.setItem('autoModeWarningShown', 'true');
+                }}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

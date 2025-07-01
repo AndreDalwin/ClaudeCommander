@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { DiscoveredProject, DiscoveredSession } from '@shared/types';
+import React, { useState } from 'react';
+import { DiscoveredProject } from '@shared/types';
 import { ArrowLeft, Search, Filter, Folder, Calendar, Database } from 'lucide-react';
 
 interface ProjectsViewProps {

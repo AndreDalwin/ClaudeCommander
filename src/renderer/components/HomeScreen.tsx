@@ -5,10 +5,7 @@ import {
   Folder, 
   Plus, 
   Activity, 
-  Clock, 
-  BarChart3,
   Layers,
-  Play,
   Terminal,
   Keyboard
 } from 'lucide-react';
