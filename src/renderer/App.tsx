@@ -409,7 +409,7 @@ function App() {
                         isActive: false,
                         type: 'historical' as const
                       };
-                    }).filter(Boolean)
+                    }).filter((session): session is NonNullable<typeof session> => session !== null)
                   ];
                 })().map((session) => (
                   <SessionListItem
