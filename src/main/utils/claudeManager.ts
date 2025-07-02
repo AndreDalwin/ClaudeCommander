@@ -357,6 +357,18 @@ export class ClaudeManager {
     }));
   }
 
+  removeSession(id: string): void {
+    const session = this.sessions.get(id);
+    if (session) {
+      // Remove from ID mappings if Claude session ID exists
+      if (session.claudeSessionId) {
+        this.claudeIdToInternalId.delete(session.claudeSessionId);
+      }
+      // Remove from sessions map
+      this.sessions.delete(id);
+    }
+  }
+
   async startNewSession(name: string, projectPath: string, prompt: string, model: string, mainWindow: BrowserWindow, autoMode = false): Promise<ClaudeSession> {
     if (!this.claudePath) {
       throw new Error('Claude binary not initialized');

@@ -3,6 +3,7 @@ import { ClaudeManager } from '../utils/claudeManager';
 import { SessionStore } from '../utils/sessionStore';
 import { SessionDiscovery } from '../utils/sessionDiscovery';
 import { SessionData, CompletionData } from '@shared/types';
+import { SessionMetadataStore } from '../utils/sessionMetadataStore';
 
 export function setupIpcHandlers(
   mainWindow: BrowserWindow,
@@ -12,6 +13,7 @@ export function setupIpcHandlers(
 ): void {
   console.log('Setting up IPC handlers...');
   const sessionDiscovery = new SessionDiscovery();
+  const sessionMetadata = SessionMetadataStore.getInstance();
   // Get Claude status
   ipcMain.handle('get-claude-status', async () => {
     console.log('Getting Claude status:', claudeStatus);
@@ -228,6 +230,87 @@ export function setupIpcHandlers(
       return { success: true };
     } catch (error) {
       console.error('Failed to open external URL:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  // Update session name
+  ipcMain.handle('update-session-name', async (_event, { sessionId, claudeSessionId, newName }: { 
+    sessionId: string; 
+    claudeSessionId?: string; 
+    newName: string 
+  }) => {
+    console.log('Updating session name:', sessionId, newName);
+    try {
+      // For active sessions, update both in-memory and persisted state
+      const session = claudeManager.getSession(sessionId);
+      if (session) {
+        session.name = newName;
+        await sessionStore.updateSessionName(sessionId, newName);
+      }
+      
+      // For historical sessions or if claudeSessionId is provided, update metadata
+      if (claudeSessionId) {
+        sessionMetadata.setSessionName(claudeSessionId, newName);
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to update session name:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  // Soft delete session
+  ipcMain.handle('delete-session', async (_event, { sessionId, claudeSessionId }: { 
+    sessionId?: string; 
+    claudeSessionId: string 
+  }) => {
+    console.log('Soft deleting session:', sessionId, claudeSessionId);
+    try {
+      // Mark session as deleted in metadata
+      sessionMetadata.deleteSession(claudeSessionId);
+      
+      // If it's an active session, also remove from memory and delete the file
+      if (sessionId) {
+        const session = claudeManager.getSession(sessionId);
+        if (session) {
+          // Cancel the session if it's running
+          if (session.isActive) {
+            session.cancel();
+          }
+          // Remove from manager
+          claudeManager.removeSession(sessionId);
+          // Delete the session file
+          await sessionStore.deleteSession(sessionId);
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  // Get session metadata
+  ipcMain.handle('get-session-metadata', async (_event, claudeSessionId: string) => {
+    return sessionMetadata.getSessionMetadata(claudeSessionId);
+  });
+
+  // Get all metadata
+  ipcMain.handle('get-all-metadata', async () => {
+    return sessionMetadata.getAllMetadata();
+  });
+
+  // Restore deleted session
+  ipcMain.handle('restore-session', async (_event, claudeSessionId: string) => {
+    console.log('Restoring session:', claudeSessionId);
+    try {
+      sessionMetadata.restoreSession(claudeSessionId);
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to restore session:', error);
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   });
