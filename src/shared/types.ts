@@ -134,6 +134,13 @@ export interface ClaudeAPI {
   getDiscoveredSessions: (projectId: string) => Promise<DiscoveredSession[]>;
   loadSessionHistory: (data: { projectId: string; sessionId: string }) => Promise<any>;
   
+  // Session management
+  updateSessionName: (data: { sessionId: string; claudeSessionId?: string; newName: string }) => Promise<{ success: boolean; error?: string }>;
+  deleteSession: (data: { sessionId?: string; claudeSessionId: string }) => Promise<{ success: boolean; error?: string }>;
+  getSessionMetadata: (claudeSessionId: string) => Promise<any>;
+  getAllMetadata: () => Promise<any>;
+  restoreSession: (claudeSessionId: string) => Promise<{ success: boolean; error?: string }>;
+  
   // Event listeners
   onSessionMessage: (sessionId: string, callback: (message: Message) => void) => () => void;
   onSessionError: (sessionId: string, callback: (error: ErrorData) => void) => () => void;

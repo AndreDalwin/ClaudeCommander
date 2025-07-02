@@ -9,6 +9,10 @@ interface StoredSession {
   projectPath: string;
   createdAt: string;
   messages: any[];
+  claudeSessionId?: string;
+  claudeProjectId?: string;
+  resumedFrom?: string;
+  autoMode?: boolean;
 }
 
 export class SessionStore {
@@ -33,7 +37,11 @@ export class SessionStore {
       name: session.name,
       projectPath: session.projectPath,
       createdAt: session.createdAt,
-      messages: session.messages
+      messages: session.messages,
+      claudeSessionId: session.claudeSessionId || undefined,
+      claudeProjectId: session.claudeProjectId || undefined,
+      resumedFrom: session.resumedFrom || undefined,
+      autoMode: session.autoMode
     };
 
     const filePath = path.join(this.storageDir, `${session.id}.json`);
@@ -77,6 +85,15 @@ export class SessionStore {
       await fs.unlink(filePath);
     } catch (error) {
       console.error('Failed to delete session:', error);
+    }
+  }
+
+  async updateSessionName(sessionId: string, newName: string): Promise<void> {
+    const session = await this.loadSession(sessionId);
+    if (session) {
+      session.name = newName;
+      const filePath = path.join(this.storageDir, `${sessionId}.json`);
+      await fs.writeFile(filePath, JSON.stringify(session, null, 2));
     }
   }
 }
