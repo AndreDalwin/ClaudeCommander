@@ -21,6 +21,13 @@ const claudeAPI: ClaudeAPI = {
   getDiscoveredSessions: (projectId) => ipcRenderer.invoke('get-discovered-sessions', projectId),
   loadSessionHistory: (data) => ipcRenderer.invoke('load-session-history', data),
   
+  // Session management
+  updateSessionName: (data) => ipcRenderer.invoke('update-session-name', data),
+  deleteSession: (data) => ipcRenderer.invoke('delete-session', data),
+  getSessionMetadata: (claudeSessionId) => ipcRenderer.invoke('get-session-metadata', claudeSessionId),
+  getAllMetadata: () => ipcRenderer.invoke('get-all-metadata'),
+  restoreSession: (claudeSessionId) => ipcRenderer.invoke('restore-session', claudeSessionId),
+  
   // Event listeners
   onSessionMessage: (sessionId, callback) => {
     const channel = `session-message:${sessionId}`;

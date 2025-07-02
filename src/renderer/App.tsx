@@ -4,8 +4,9 @@ import { ProjectsView } from './components/ProjectsView';
 import { ProjectDetailView } from './components/ProjectDetailView';
 import { UnifiedSessionView } from './components/UnifiedSessionView';
 import { NewSessionDialog } from './components/NewSessionDialog';
+import SessionListItem from './components/SessionListItem';
 import { ClaudeSession, SessionData, DiscoveredProject, DiscoveredSession } from '@shared/types';
-import { ArrowLeft, Plus, MessageSquare, Home } from 'lucide-react';
+import { ArrowLeft, Plus, Home } from 'lucide-react';
 
 type ViewState = 'home' | 'projects' | 'project-detail' | 'session';
 
@@ -20,11 +21,13 @@ function App() {
   const [discoveredProjects, setDiscoveredProjects] = useState<DiscoveredProject[]>([]);
   const [newSessionPath, setNewSessionPath] = useState<string>('');
   const [projectDiscoveredSessions, setProjectDiscoveredSessions] = useState<DiscoveredSession[]>([]);
+  const [sessionMetadata, setSessionMetadata] = useState<Record<string, any>>({});
 
   useEffect(() => {
     loadSessions();
     loadClaudeStatus();
     loadDiscoveredProjects();
+    loadMetadata();
   }, []);
 
   // Load discovered sessions for current project when in session view
@@ -74,6 +77,15 @@ function App() {
     }
   };
 
+  const loadMetadata = async () => {
+    try {
+      const metadata = await window.claudeAPI.getAllMetadata();
+      setSessionMetadata(metadata.sessions || {});
+    } catch (error) {
+      console.error('Failed to load session metadata:', error);
+    }
+  };
+
   const handleCreateSession = async (sessionData: SessionData) => {
     try {
       console.log('Creating session with data:', sessionData);
@@ -100,6 +112,69 @@ function App() {
     } catch (error) {
       console.error('Failed to create session:', error);
       alert(`Failed to create session: ${(error as Error).message}`);
+    }
+  };
+
+  const handleRenameSession = async (sessionId: string, claudeSessionId: string | undefined, newName: string) => {
+    try {
+      const result = await window.claudeAPI.updateSessionName({ 
+        sessionId, 
+        claudeSessionId, 
+        newName 
+      });
+      
+      if (result.success) {
+        // Update local state for active sessions
+        setSessions(prevSessions => 
+          prevSessions.map(s => 
+            s.id === sessionId ? { ...s, name: newName } : s
+          )
+        );
+        
+        // Reload metadata to get the updated custom name
+        await loadMetadata();
+      } else {
+        console.error('Failed to rename session:', result.error);
+        alert(`Failed to rename session: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to rename session:', error);
+      alert(`Failed to rename session: ${(error as Error).message}`);
+    }
+  };
+
+  const handleDeleteSession = async (sessionId: string | undefined, claudeSessionId: string) => {
+    try {
+      const result = await window.claudeAPI.deleteSession({ 
+        sessionId, 
+        claudeSessionId 
+      });
+      
+      if (result.success) {
+        // Remove from active sessions if it exists
+        if (sessionId) {
+          setSessions(prevSessions => 
+            prevSessions.filter(s => s.id !== sessionId)
+          );
+        }
+        
+        // Remove from discovered sessions
+        setProjectDiscoveredSessions(prevSessions =>
+          prevSessions.filter(s => s.id !== claudeSessionId)
+        );
+        
+        // If this was the selected session, clear selection
+        if (selectedSessionId === (sessionId || claudeSessionId)) {
+          setSelectedSessionId(null);
+          setSelectedSessionType(null);
+        }
+      } else {
+        console.error('Failed to delete session:', result.error);
+        alert(`Failed to delete session: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      alert(`Failed to delete session: ${(error as Error).message}`);
     }
   };
 
@@ -215,7 +290,14 @@ function App() {
         // Find session details
         const activeSession = sessions.find(s => s.id === selectedSessionId);
         const discoveredSession = projectDiscoveredSessions.find(s => s.id === selectedSessionId);
-        const sessionName = activeSession?.name || 
+        
+        // Get custom name from metadata if available
+        const claudeSessionId = activeSession?.claudeSessionId || selectedSessionId;
+        const metadata = sessionMetadata[claudeSessionId];
+        const customName = metadata?.customName;
+        
+        const sessionName = customName || 
+                           activeSession?.name || 
                            discoveredSession?.first_message || 
                            `Session ${selectedSessionId.substring(0, 8)}`;
         
@@ -304,51 +386,54 @@ function App() {
                     // Active sessions first
                     ...activeSessions.map(session => ({
                       id: session.id,
+                      claudeSessionId: session.claudeSessionId,
                       name: session.name,
                       subtitle: `${session.messageCount} messages`,
                       isActive: true,
                       type: 'active' as const
                     })),
                     // Then historical sessions (excluding those that are already active)
-                    ...filteredHistoricalSessions.map(session => ({
-                      id: session.id,
-                      name: session.first_message || `Session ${session.id.substring(0, 8)}`,
-                      subtitle: new Date(session.created_at * 1000).toLocaleDateString(),
-                      isActive: false,
-                      type: 'historical' as const
-                    }))
+                    ...filteredHistoricalSessions.map(session => {
+                      const metadata = sessionMetadata[session.id];
+                      const customName = metadata?.customName;
+                      const isDeleted = metadata?.isDeleted || false;
+                      
+                      // Skip deleted sessions for now (will add toggle later)
+                      if (isDeleted) return null;
+                      
+                      return {
+                        id: session.id,
+                        claudeSessionId: session.id, // For historical sessions, the ID is the Claude session ID
+                        name: customName || session.first_message || `Session ${session.id.substring(0, 8)}`,
+                        subtitle: new Date(session.created_at * 1000).toLocaleDateString(),
+                        isActive: false,
+                        type: 'historical' as const
+                      };
+                    }).filter(Boolean)
                   ];
                 })().map((session) => (
-                  <div
+                  <SessionListItem
                     key={session.id}
-                    className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 border ${
-                      selectedSessionId === session.id
-                        ? 'bg-[#2a2a2a] border-blue-500/50 shadow-lg' 
-                        : 'bg-[#1a1a1a] border-[#2a2a2a] hover:bg-[#2a2a2a] hover:border-[#3a3a3a]'
-                    }`}
+                    id={session.id}
+                    claudeSessionId={session.claudeSessionId}
+                    name={session.name}
+                    subtitle={session.subtitle}
+                    isActive={session.isActive}
+                    isSelected={selectedSessionId === session.id}
                     onClick={() => {
                       setSelectedSessionId(session.id);
                       setSelectedSessionType(session.type);
                     }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/20">
-                        <MessageSquare className="w-4 h-4 text-blue-400" />
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="text-sm text-white truncate">{session.name}</div>
-                          {session.isActive && (
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Active session" />
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {session.subtitle}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    onRename={(newName) => handleRenameSession(
+                      session.type === 'active' ? session.id : '',
+                      session.claudeSessionId,
+                      newName
+                    )}
+                    onDelete={() => handleDeleteSession(
+                      session.type === 'active' ? session.id : undefined,
+                      session.claudeSessionId || session.id
+                    )}
+                  />
                 ))}
                 
                 {(() => {
