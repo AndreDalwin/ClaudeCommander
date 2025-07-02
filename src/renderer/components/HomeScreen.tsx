@@ -152,7 +152,7 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
                 <Keyboard className="w-5 h-5 text-gray-400" />
                 <h3 className="text-lg font-semibold text-white">Quick Tips</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Enter</span>
                   <span className="text-gray-400">Send message to Claude</span>
@@ -164,6 +164,14 @@ export function HomeScreen({ onNavigate, claudeStatus, stats }: HomeScreenProps)
                 <div className="flex items-start gap-3">
                   <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Esc</span>
                   <span className="text-gray-400">Cancel current operation</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">F2</span>
+                  <span className="text-gray-400">Rename selected session</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="text-blue-400 font-mono bg-[#0a0a0a] px-2 py-1 rounded">Delete</span>
+                  <span className="text-gray-400">Delete selected session</span>
                 </div>
               </div>
             </div>
